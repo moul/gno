@@ -3,16 +3,17 @@ build/
 Dockerfile
 misc/
 docker-compose.yml
-tests/docker-integration/
+tests/docker-integration
 
 # gitignore
+misc/
 *.sw[pon]
 cmd/foo.go
 unsorted.*
 .DS_Store
 data/*
 proto/*
-testdir/
+testdir
 pkgs/sdk/vm/_testdata
 build/*
 *.tx
