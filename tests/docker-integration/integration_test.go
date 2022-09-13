@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,16 +30,44 @@ func TestDockerIntegration(t *testing.T) {
 func runSuite(t *testing.T, tempdir string) {
 	t.Helper()
 
-	cmd := createCommand(t, []string{
-		"docker", "exec", gnolandContainerName,
-		"gnokey", "query", "auth/accounts/g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5", // test1
-	})
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err)
-	// FIXME: this will break frequently. we need a reliable test.
-	require.Contains(t, string(output), "9999980000000ugnot")
+	// perform query.
+	{
+		cmd := createCommand(t, []string{
+			"docker", "exec", gnolandContainerName,
+			"gnokey", "query", "auth/accounts/g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5", // test1
+		})
+		output, err := cmd.CombinedOutput()
+		require.NoError(t, err)
+		// FIXME: this will break frequently. we need a reliable test.
+		require.Contains(t, string(output), "9999980000000ugnot")
+	}
 
-	// FIXME: perform TXs.
+	// add pkg.
+	{
+		helloDir := filepath.Join(tempdir, "hellopkg")
+		err := os.Mkdir(helloDir, 0755)
+		require.NoError(t, err)
+		helloMainPath := filepath.Join(helloDir, "contract.gno")
+		helloMainContent := `package contract
+func Hello() string {
+    return "World!"
+}
+`
+		err = ioutil.WriteFile(helloMainPath, []byte(helloMainContent), 0644)
+		require.NoError(t, err)
+
+		cmd := createCommand(t, []string{
+			"docker", "exec", gnolandContainerName,
+			"gnokey", "maketx", "addpkg", "test1",
+			"--pkgdir", "",
+		})
+		output, err := cmd.CombinedOutput()
+		require.NoError(t, err)
+		// FIXME: this will break frequently. we need a reliable test.
+		require.Contains(t, string(output), "9999980000000ugnot")
+	}
+
+	// TODO: perform TXs.
 }
 
 func checkDocker(t *testing.T) {
