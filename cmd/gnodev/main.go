@@ -29,10 +29,10 @@ var mainApps AppList = []AppItem{
 	{precompileApp, "precompile", "precompile .gno to .go", DefaultPrecompileOptions},
 	{testApp, "test", "test a gno package", DefaultTestOptions},
 	{replApp, "repl", "start a GnoVM REPL", DefaultReplOptions},
+	{graphApp, "graph", "show deps graph", DefaultGraphOptions},
 
 	// fmt -- gofmt
 	// clean
-	// graph
 	// vendor -- download deps from the chain in vendor/
 	// list -- list packages
 	// run -- call render(), or maybe create a new main?
