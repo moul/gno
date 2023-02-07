@@ -1,8 +1,8 @@
 package client
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type BaseOptions struct {
@@ -31,5 +31,5 @@ func homeDir() string {
 	if err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf("%s/.gno", hd)
+	return filepath.Join(hd, ".gno")
 }
