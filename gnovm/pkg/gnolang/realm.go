@@ -1147,14 +1147,14 @@ func copyValueWithRefs(parent Object, val Value) Value {
 			Receiver:   rtv,
 		}
 	case *MapValue:
-		println("%%%%%%1", "parent", parent, "val", val, "cv", cv)
+		println("%%%%%%1", "parent<", parent, "val", val, "cv", cv)
 		list := &MapList{}
 		for cur := cv.List.Head; cur != nil; cur = cur.Next {
 			key2 := refOrCopyValue(cv, cur.Key)
 			val2 := refOrCopyValue(cv, cur.Value)
 			list.Append(nilAllocator, key2).Value = val2
 		}
-		println("%%%%%%2", "parent", parent, "val", val, "cv", cv, "list", list)
+		println("%%%%%%2", "parent>", parent, "val", val, "cv", cv, "list", list)
 		return &MapValue{
 			ObjectInfo: cv.ObjectInfo.Copy(),
 			List:       list,
