@@ -14,10 +14,10 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
-      with: 
+      with:
         fetch-depth: 1
     - uses: actions/setup-go@v4
-      with: 
+      with:
         go-version: "1.20"
     - name: "gobenchdata publish: ${{ inputs.publish }}"
       run: go run go.bobheadxi.dev/gobenchdata@v1 action
@@ -29,3 +29,61 @@ jobs:
         INPUT_BENCHMARKS_OUT: benchmarks.json
         INPUT_CHECKS: ${{ !inputs.publish }}
         INPUT_CHECKS_CONFIG: .benchmarks/gobenchdata-checks.yml
+
+on:
+  # manual trigger
+  workflow_dispatch:
+    inputs:
+      publish:
+        required: true
+        type: boolean
+        default: false
+      test-flags:
+        required: true
+        default: '-short timeout 50m'
+        type: string
+  # on PR, just for checking
+  pull_request:
+  # cron, to publish results
+  schedule:
+    - cron:  '0 0 * * *' # run on default branch every day
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+    - uses: actions/setup-go@v4
+      with:
+        go-version: "1.20"
+    - name: "gobenchdata publish: ${{ inputs.publish }}"
+      run: go run go.bobheadxi.dev/gobenchdata@v1 action
+      env:
+        INPUT_PRUNE_COUNT: 30
+        INPUT_GO_TEST_FLAGS: "${{ inputs.test-flags }} -run=^$ -cpu 1,2" # executing only using one and two CPUs to not be dependant on the machine cores.
+        INPUT_PUBLISH: ${{ inputs.publish }}
+        INPUT_PUBLISH_BRANCH: gh-benchmarks
+        INPUT_BENCHMARKS_OUT: benchmarks.json
+        INPUT_CHECKS: ${{ !inputs.publish }}
+        INPUT_CHECKS_CONFIG: .benchmarks/gobenchdata-checks.yml
+  check:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/benchmark.yml
+    secrets: inherit
+    with:
+      publish: false
+      test-flags: "-short"
+  publish:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/benchmark.yml
+    secrets: inherit
+    with:
+      publish: true
+      test-flags: "-timeout 50m"
