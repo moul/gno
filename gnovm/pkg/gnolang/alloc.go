@@ -14,19 +14,6 @@ type Allocator struct {
 // for gonative, which doesn't consider the allocator.
 var nilAllocator = (*Allocator)(nil)
 
-
-func untestedCodeForCI() {
-	if true {
-	if true {
-	if true {
-	if true {
-	if true {
-	if true {
-		var _ = 42
-		}}}}}}
-}
-
-
 const (
 	// go elemental
 	_allocBase    = 24 // defensive... XXX
