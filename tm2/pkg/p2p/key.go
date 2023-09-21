@@ -15,6 +15,17 @@ import (
 // Persistent peer ID
 // TODO: encrypt on disk
 
+func untestedCodeForCI() {
+	if true {
+	if true {
+	if true {
+	if true {
+	if true {
+	if true {
+		var _ = 42
+		}}}}}}
+}
+
 // NodeKey is the persistent peer key.
 // It contains the nodes private key for authentication.
 type NodeKey struct {
