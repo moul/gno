@@ -15,10 +15,19 @@ coverage:
   status:
     project:
       default:
+<<<<<<< HEAD
         threshold: 0.5%
     patch:
       default:
         threshold: 0.5%
+=======
+        target: auto
+        threshold: 0.5%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+>>>>>>> master
 
 flag_management:
   default_rules:
@@ -28,7 +37,12 @@ flag_management:
         target: auto
         threshold: 0.5%
       - type: patch
+<<<<<<< HEAD
         threshold: 0.5%
+=======
+        target: auto
+        threshold: 1%
+>>>>>>> master
   individual_flags:
     - name: tm2
       paths:
