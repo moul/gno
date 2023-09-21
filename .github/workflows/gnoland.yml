@@ -73,7 +73,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: gno.land
-          flags: gno.land-${{matrix.args}}
+          flags: gno.land-${{matrix.args}}-${{matrix.go-version}}
           files: ./gno.land/coverage.out
           #fail_ci_if_error: ${{ github.repository == 'gnolang/gno' }}
           fail_ci_if_error: false # temporarily
