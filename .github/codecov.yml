@@ -19,7 +19,6 @@ coverage:
     patch:
       default:
         threshold: 0.5%
-    
 
 flag_management:
   default_rules:
