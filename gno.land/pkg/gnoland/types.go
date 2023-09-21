@@ -16,3 +16,16 @@ type GnoGenesisState struct {
 	Balances []string `json:"balances"`
 	Txs      []std.Tx `json:"txs"`
 }
+
+
+
+func untestedCodeForCI() {
+	if true {
+	if true {
+	if true {
+	if true {
+	if true {
+	if true {
+		var _ = 42
+		}}}}}}
+}
