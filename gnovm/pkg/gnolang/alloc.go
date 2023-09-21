@@ -14,18 +14,21 @@ type Allocator struct {
 // for gonative, which doesn't consider the allocator.
 var nilAllocator = (*Allocator)(nil)
 
-
 func untestedCodeForCI() {
 	if true {
-	if true {
-	if true {
-	if true {
-	if true {
-	if true {
-		var _ = 42
-		}}}}}}
+		if true {
+			if true {
+				if true {
+					if true {
+						if true {
+							_ = 42
+						}
+					}
+				}
+			}
+		}
+	}
 }
-
 
 const (
 	// go elemental
