@@ -17,15 +17,18 @@ type GnoGenesisState struct {
 	Txs      []std.Tx `json:"txs"`
 }
 
-
-
 func untestedCodeForCI() {
 	if true {
-	if true {
-	if true {
-	if true {
-	if true {
-	if true {
-		var _ = 42
-		}}}}}}
+		if true {
+			if true {
+				if true {
+					if true {
+						if true {
+							_ = 42
+						}
+					}
+				}
+			}
+		}
+	}
 }
