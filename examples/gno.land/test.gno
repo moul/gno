@@ -1,3 +1,3 @@
 package main
 
-func untested() {}
+func main() {}
