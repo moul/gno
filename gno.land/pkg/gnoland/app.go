@@ -49,7 +49,6 @@ func TestAppOptions(db dbm.DB) *AppOptions {
 			GenesisTxResultHandler: PanicOnFailingTxResultHandler,
 			StdlibDir:              filepath.Join(gnoenv.RootDir(), "gnovm", "stdlibs"),
 			CacheStdlibLoad:        true,
-			ChainDomain:            "gno.land",
 		},
 	}
 }
@@ -223,9 +222,6 @@ type InitChainerConfig struct {
 	// This should be used for integration testing, where InitChainer will be
 	// called several times.
 	CacheStdlibLoad bool
-
-	// ChainDomain is the primary domain name for the chain and its packages.
-	ChainDomain string
 
 	// These fields are passed directly by NewAppWithOptions, and should not be
 	// configurable by end-users.

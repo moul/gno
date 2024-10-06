@@ -9,6 +9,7 @@ import (
 var (
 	ErrBalanceEmptyAddress = errors.New("balance address is empty")
 	ErrBalanceEmptyAmount  = errors.New("balance amount is empty")
+	ErrDomainMissing       = errors.New("chain domain is missing")
 )
 
 type GnoAccount struct {
@@ -22,4 +23,5 @@ func ProtoGnoAccount() std.Account {
 type GnoGenesisState struct {
 	Balances []Balance `json:"balances"`
 	Txs      []std.Tx  `json:"txs"`
+	Domain   string    `json:"domain"`
 }

@@ -421,6 +421,7 @@ func generateGenesisFile(genesisFile string, pk crypto.PubKey, c *startCfg) erro
 	gen.AppState = gnoland.GnoGenesisState{
 		Balances: balances,
 		Txs:      genesisTxs,
+		Domain:   c.chainDomain,
 	}
 
 	// Write genesis state
