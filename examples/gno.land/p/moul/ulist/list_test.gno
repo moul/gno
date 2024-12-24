@@ -79,3 +79,127 @@ func TestList(t *testing.T) {
 		}
 	})
 }
+
+func TestDetailedStats(t *testing.T) {
+	cases := []struct {
+		name string
+		fn   func() *List
+	}{
+		{
+			name: "Append 100th item",
+			fn: func() *List {
+				l := New()
+				for i := 0; i < 99; i++ {
+					l.Append(i)
+				}
+				ResetStats()
+				l.Append(99)
+				return l
+			},
+		},
+		{
+			name: "Prepend 100th item",
+			fn: func() *List {
+				l := New()
+				for i := 0; i < 99; i++ {
+					l.Append(i)
+				}
+				ResetStats()
+				l.Prepend(99)
+				return l
+			},
+		},
+		{
+			name: "Insert 100th item in middle",
+			fn: func() *List {
+				l := New()
+				for i := 0; i < 99; i++ {
+					l.Append(i)
+				}
+				ResetStats()
+				l.Insert(49, 99)
+				return l
+			},
+		},
+		{
+			name: "Get middle item from list of 100",
+			fn: func() *List {
+				l := New()
+				for i := 0; i < 100; i++ {
+					l.Append(i)
+				}
+				ResetStats()
+				l.Get(49)
+				return l
+			},
+		},
+		{
+			name: "Append 100 items",
+			fn: func() *List {
+				l := New()
+				ResetStats()
+				for i := 0; i < 100; i++ {
+					l.Append(i)
+				}
+				return l
+			},
+		},
+		{
+			name: "Prepend 100 items",
+			fn: func() *List {
+				l := New()
+				ResetStats()
+				for i := 0; i < 100; i++ {
+					l.Prepend(i)
+				}
+				return l
+			},
+		},
+		{
+			name: "Sequential read of 100 items",
+			fn: func() *List {
+				l := New()
+				for i := 0; i < 100; i++ {
+					l.Append(i)
+				}
+				ResetStats()
+				for i := 0; i < 100; i++ {
+					l.Get(i)
+				}
+				return l
+			},
+		},
+		{
+			name: "Random access of 20 items in list of 100",
+			fn: func() *List {
+				l := New()
+				for i := 0; i < 100; i++ {
+					l.Append(i)
+				}
+				ResetStats()
+				// Access some scattered indices
+				indices := []int{0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99}
+				for _, idx := range indices {
+					l.Get(idx)
+				}
+				return l
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ResetStats()
+			tc.fn()
+			stats := GetStats()
+			t.Logf("Operation: %s", tc.name)
+			t.Logf("- Reads: %d", stats.reads)
+			t.Logf("- Writes: %d", stats.writes)
+			t.Logf("- Balances: %d", stats.balances)
+			t.Logf("- Rotations: %d", stats.rotations)
+			t.Logf("- Height calculations: %d", stats.heightCalcs)
+			t.Logf("- Size calculations: %d", stats.sizeCalcs)
+			t.Logf("---")
+		})
+	}
+}

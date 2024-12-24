@@ -138,6 +138,7 @@ func balance(node *Node) *Node {
 }
 
 func rotateLeft(node *Node) *Node {
+	stats.rotations++
 	rightNode := node.right
 	node.right = rightNode.left
 	rightNode.left = node
@@ -152,6 +153,7 @@ func rotateLeft(node *Node) *Node {
 }
 
 func rotateRight(node *Node) *Node {
+	stats.rotations++
 	leftNode := node.left
 	node.left = leftNode.right
 	leftNode.right = node
@@ -167,6 +169,7 @@ func rotateRight(node *Node) *Node {
 
 // Convert helper functions to methods
 func (n *Node) size() int {
+	stats.sizeCalcs++
 	if n == nil {
 		return 0
 	}
@@ -174,6 +177,7 @@ func (n *Node) size() int {
 }
 
 func (n *Node) height() int8 {
+	stats.heightCalcs++
 	if n == nil {
 		return 0
 	}
@@ -192,4 +196,23 @@ func maxInt8(a, b int8) int8 {
 		return a
 	}
 	return b
+}
+
+type OpStats struct {
+	reads       int
+	writes      int
+	balances    int
+	rotations   int
+	heightCalcs int
+	sizeCalcs   int
+}
+
+var stats OpStats
+
+func ResetStats() {
+	stats = OpStats{}
+}
+
+func GetStats() OpStats {
+	return stats
 }
