@@ -41,54 +41,48 @@ import (
 	"gno.land/p/demo/ufmt"
 )
 
-const (
-	maxLevel = 16 // Maximum levels in the skip list
-)
+// List represents a deterministic skip list.
+type List struct {
+	head     *node
+	level    int
+	size     int
+	maxLevel int
+}
 
-// node represents a single node in the skip list
+// New creates and initializes a new List with default maximum level of 16.
+func New() *List {
+	return NewWithMaxLevel(16)
+}
+
+// NewWithMaxLevel creates and initializes a new List with specified maximum level.
+func NewWithMaxLevel(maxLevel int) *List {
+	head := &node{
+		next: make([]*node, maxLevel),
+	}
+	return &List{
+		head:     head,
+		level:    1,
+		size:     0,
+		maxLevel: maxLevel,
+	}
+}
+
+// node represents a single node in the skip list.
 type node struct {
 	key   int
 	value interface{}
 	next  []*node // Slices for level pointers
 }
 
-// SkipList represents the entire skip list
-type SkipList struct {
-	head  *node
-	level int
-	size  int
-}
+// Core Operations
 
-// NewSkipList creates and initializes a new deterministic SkipList
-func NewSkipList() *SkipList {
-	head := &node{
-		next: make([]*node, maxLevel),
-	}
-	return &SkipList{
-		head:  head,
-		level: 1,
-		size:  0,
-	}
-}
-
-// calculateLevel deterministically calculates the level of a new node
-func (sl *SkipList) calculateLevel() int {
-	level := 1
-	threshold := 2
-	for sl.size >= threshold && level < maxLevel {
-		level++
-		threshold <<= 1 // Double the threshold at each level (powers of 2)
-	}
-	return level
-}
-
-// Insert adds a new key-value pair to the skip list
-func (sl *SkipList) Insert(key int, value interface{}) {
-	update := make([]*node, maxLevel)
-	current := sl.head
+// Insert adds a new key-value pair to the list.
+func (l *List) Insert(key int, value interface{}) {
+	update := make([]*node, l.maxLevel)
+	current := l.head
 
 	// Find the position for the new key
-	for i := sl.level - 1; i >= 0; i-- {
+	for i := l.level - 1; i >= 0; i-- {
 		for current.next[i] != nil && current.next[i].key < key {
 			current = current.next[i]
 		}
@@ -102,12 +96,12 @@ func (sl *SkipList) Insert(key int, value interface{}) {
 	}
 
 	// Determine the level of the new node
-	level := sl.calculateLevel()
-	if level > sl.level {
-		for i := sl.level; i < level; i++ {
-			update[i] = sl.head
+	level := l.calculateLevel()
+	if level > l.level {
+		for i := l.level; i < level; i++ {
+			update[i] = l.head
 		}
-		sl.level = level
+		l.level = level
 	}
 
 	// Create a new node
@@ -123,13 +117,13 @@ func (sl *SkipList) Insert(key int, value interface{}) {
 		update[i].next[i] = newNode
 	}
 
-	sl.size++
+	l.size++
 }
 
-// Search finds a value by its key
-func (sl *SkipList) Search(key int) (interface{}, bool) {
-	current := sl.head
-	for i := sl.level - 1; i >= 0; i-- {
+// Search finds a value by its key.
+func (l *List) Search(key int) (interface{}, bool) {
+	current := l.head
+	for i := l.level - 1; i >= 0; i-- {
 		for current.next[i] != nil && current.next[i].key < key {
 			current = current.next[i]
 		}
@@ -141,13 +135,13 @@ func (sl *SkipList) Search(key int) (interface{}, bool) {
 	return nil, false
 }
 
-// Delete removes a key-value pair from the skip list
-func (sl *SkipList) Delete(key int) {
-	update := make([]*node, maxLevel)
-	current := sl.head
+// Delete removes a key-value pair from the list.
+func (l *List) Delete(key int) {
+	update := make([]*node, l.maxLevel)
+	current := l.head
 
 	// Find the position of the node to delete
-	for i := sl.level - 1; i >= 0; i-- {
+	for i := l.level - 1; i >= 0; i-- {
 		for current.next[i] != nil && current.next[i].key < key {
 			current = current.next[i]
 		}
@@ -160,7 +154,7 @@ func (sl *SkipList) Delete(key int) {
 	}
 
 	// Update pointers
-	for i := 0; i < sl.level; i++ {
+	for i := 0; i < l.level; i++ {
 		if update[i].next[i] != target {
 			break
 		}
@@ -168,18 +162,74 @@ func (sl *SkipList) Delete(key int) {
 	}
 
 	// Reduce the level if necessary
-	for sl.level > 1 && sl.head.next[sl.level-1] == nil {
-		sl.level--
+	for l.level > 1 && l.head.next[l.level-1] == nil {
+		l.level--
 	}
 
-	sl.size--
+	l.size--
 }
 
-// Print displays the contents of the skip list
-func (sl *SkipList) Sprint() string {
+// List-like Operations
+
+// Front returns the first element of the list.
+func (l *List) Front() (key int, value interface{}, exists bool) {
+	if l.size == 0 {
+		return 0, nil, false
+	}
+	current := l.head.next[0]
+	return current.key, current.value, true
+}
+
+// Back returns the last element of the list.
+func (l *List) Back() (key int, value interface{}, exists bool) {
+	if l.size == 0 {
+		return 0, nil, false
+	}
+	current := l.head
+	for i := l.level - 1; i >= 0; i-- {
+		for current.next[i] != nil {
+			current = current.next[i]
+		}
+	}
+	return current.key, current.value, true
+}
+
+// Len returns the number of elements in the list.
+func (l *List) Len() int {
+	return l.size
+}
+
+// Clear removes all elements from the list.
+func (l *List) Clear() {
+	l.head.next = make([]*node, l.maxLevel)
+	l.level = 1
+	l.size = 0
+}
+
+// Helper Methods
+
+// calculateLevel deterministically calculates the level of a new node.
+func (l *List) calculateLevel() int {
+	level := 1
+	threshold := 2
+	for l.size >= threshold && level < l.maxLevel {
+		level++
+		threshold <<= 1 // Double the threshold at each level (powers of 2)
+	}
+	return level
+}
+
+// Has returns true if the key exists in the list.
+func (l *List) Has(key int) bool {
+	_, found := l.Search(key)
+	return found
+}
+
+// Sprint displays the contents of the list.
+func (l *List) Sprint() string {
 	var sb strings.Builder
-	for i := sl.level - 1; i >= 0; i-- {
-		current := sl.head.next[i]
+	for i := l.level - 1; i >= 0; i-- {
+		current := l.head.next[i]
 		sb.WriteString(ufmt.Sprintf("Level %d: ", i+1))
 		for current != nil {
 			sb.WriteString(ufmt.Sprintf("%d ", current.key))
@@ -190,72 +240,37 @@ func (sl *SkipList) Sprint() string {
 	return sb.String()
 }
 
-// Front returns the first element of the list.
-func (sl *SkipList) Front() (key int, value interface{}, exists bool) {
-	if sl.size == 0 {
-		return 0, nil, false
-	}
-	current := sl.head.next[0]
-	return current.key, current.value, true
-}
-
-// Back returns the last element of the list.
-func (sl *SkipList) Back() (key int, value interface{}, exists bool) {
-	if sl.size == 0 {
-		return 0, nil, false
-	}
-	current := sl.head
-	for i := sl.level - 1; i >= 0; i-- {
-		for current.next[i] != nil {
-			current = current.next[i]
-		}
-	}
-	return current.key, current.value, true
-}
-
-// Len returns the number of elements in the list.
-func (sl *SkipList) Len() int {
-	return sl.size
-}
-
-// Clear removes all elements from the list.
-func (sl *SkipList) Clear() {
-	sl.head.next = make([]*node, maxLevel)
-	sl.level = 1
-	sl.size = 0
-}
+// Extended Operations
 
 // Append adds a new element to the end of the list.
-// It automatically assigns a key that is greater than the current maximum key.
-func (sl *SkipList) Append(value interface{}) int {
+func (l *List) Append(value interface{}) int {
 	var newKey int
-	if sl.size == 0 {
+	if l.size == 0 {
 		newKey = 0
 	} else {
-		lastKey, _, _ := sl.Back()
+		lastKey, _, _ := l.Back()
 		newKey = lastKey + 1
 	}
-	sl.Insert(newKey, value)
+	l.Insert(newKey, value)
 	return newKey
 }
 
 // Prepend adds a new element to the beginning of the list.
-// It automatically assigns a key that is less than the current minimum key.
-func (sl *SkipList) Prepend(value interface{}) int {
+func (l *List) Prepend(value interface{}) int {
 	var newKey int
-	if sl.size == 0 {
+	if l.size == 0 {
 		newKey = 0
 	} else {
-		firstKey, _, _ := sl.Front()
+		firstKey, _, _ := l.Front()
 		newKey = firstKey - 1
 	}
-	sl.Insert(newKey, value)
+	l.Insert(newKey, value)
 	return newKey
 }
 
 // ForEach iterates through all elements in the list in order.
-func (sl *SkipList) ForEach(fn func(key int, value interface{}) bool) {
-	current := sl.head.next[0]
+func (l *List) ForEach(fn func(key int, value interface{}) bool) {
+	current := l.head.next[0]
 	for current != nil {
 		if fn(current.key, current.value) {
 			break
@@ -265,9 +280,9 @@ func (sl *SkipList) ForEach(fn func(key int, value interface{}) bool) {
 }
 
 // Values returns a slice of all values in the list, in order.
-func (sl *SkipList) Values() []interface{} {
-	values := make([]interface{}, 0, sl.size)
-	sl.ForEach(func(key int, value interface{}) bool {
+func (l *List) Values() []interface{} {
+	values := make([]interface{}, 0, l.size)
+	l.ForEach(func(key int, value interface{}) bool {
 		values = append(values, value)
 		return false
 	})
@@ -275,9 +290,9 @@ func (sl *SkipList) Values() []interface{} {
 }
 
 // Keys returns a slice of all keys in the list, in order.
-func (sl *SkipList) Keys() []int {
-	keys := make([]int, 0, sl.size)
-	sl.ForEach(func(key int, value interface{}) bool {
+func (l *List) Keys() []int {
+	keys := make([]int, 0, l.size)
+	l.ForEach(func(key int, value interface{}) bool {
 		keys = append(keys, key)
 		return false
 	})
@@ -285,10 +300,9 @@ func (sl *SkipList) Keys() []int {
 }
 
 // InsertAfter inserts a new element after the element with the given key.
-// Returns false if the key is not found.
-func (sl *SkipList) InsertAfter(key int, value interface{}) (newKey int, ok bool) {
-	current := sl.head
-	for i := sl.level - 1; i >= 0; i-- {
+func (l *List) InsertAfter(key int, value interface{}) (newKey int, ok bool) {
+	current := l.head
+	for i := l.level - 1; i >= 0; i-- {
 		for current.next[i] != nil && current.next[i].key < key {
 			current = current.next[i]
 		}
@@ -298,29 +312,26 @@ func (sl *SkipList) InsertAfter(key int, value interface{}) (newKey int, ok bool
 		return 0, false
 	}
 
-	// Calculate the new key
 	var nextKey int
 	if current.next[0] == nil {
 		nextKey = key + 1
 	} else {
 		nextKey = (key + current.next[0].key) / 2
-		if nextKey == key { // If there's no space between keys
+		if nextKey == key {
 			nextKey = key + 1
 		}
 	}
 
-	sl.Insert(nextKey, value)
+	l.Insert(nextKey, value)
 	return nextKey, true
 }
 
 // InsertBefore inserts a new element before the element with the given key.
-// Returns false if the key is not found.
-func (sl *SkipList) InsertBefore(key int, value interface{}) (newKey int, ok bool) {
-	current := sl.head
+func (l *List) InsertBefore(key int, value interface{}) (newKey int, ok bool) {
+	current := l.head
 	var prevNode *node
 
-	// Find the node before the target key
-	for i := sl.level - 1; i >= 0; i-- {
+	for i := l.level - 1; i >= 0; i-- {
 		for current.next[i] != nil && current.next[i].key < key {
 			current = current.next[i]
 		}
@@ -329,28 +340,141 @@ func (sl *SkipList) InsertBefore(key int, value interface{}) (newKey int, ok boo
 		}
 	}
 
-	// Check if key exists
 	if current.next[0] == nil || current.next[0].key != key {
 		return 0, false
 	}
 
-	// Calculate the new key
 	var prevKey int
-	if prevNode == sl.head {
+	if prevNode == l.head {
 		prevKey = key - 1
 	} else {
 		prevKey = (prevNode.key + key) / 2
-		if prevKey == key { // If there's no space between keys
+		if prevKey == key {
 			prevKey = key - 1
 		}
 	}
 
-	sl.Insert(prevKey, value)
+	l.Insert(prevKey, value)
 	return prevKey, true
 }
 
-// Has returns true if the key exists in the list.
-func (sl *SkipList) Has(key int) bool {
-	_, found := sl.Search(key)
-	return found
+// Merge efficiently combines two lists into a new one.
+// Both input lists remain unchanged.
+func Merge(l1, l2 *List) *List {
+	if l1 == nil || l1.size == 0 {
+		return l2
+	}
+	if l2 == nil || l2.size == 0 {
+		return l1
+	}
+
+	// Create a new list with max level from either list
+	maxLevel := l1.maxLevel
+	if l2.maxLevel > maxLevel {
+		maxLevel = l2.maxLevel
+	}
+	result := NewWithMaxLevel(maxLevel)
+
+	// Traverse both lists simultaneously
+	curr1 := l1.head.next[0]
+	curr2 := l2.head.next[0]
+
+	// Pre-allocate update array for better performance
+	update := make([]*node, maxLevel)
+	current := result.head
+
+	// Merge nodes from both lists
+	for curr1 != nil && curr2 != nil {
+		var nextNode *node
+		if curr1.key < curr2.key {
+			nextNode = &node{
+				key:   curr1.key,
+				value: curr1.value,
+				next:  make([]*node, result.calculateLevel()),
+			}
+			curr1 = curr1.next[0]
+		} else if curr2.key < curr1.key {
+			nextNode = &node{
+				key:   curr2.key,
+				value: curr2.value,
+				next:  make([]*node, result.calculateLevel()),
+			}
+			curr2 = curr2.next[0]
+		} else {
+			// In case of equal keys, take from l1 (arbitrary choice)
+			nextNode = &node{
+				key:   curr1.key,
+				value: curr1.value,
+				next:  make([]*node, result.calculateLevel()),
+			}
+			curr1 = curr1.next[0]
+			curr2 = curr2.next[0]
+		}
+
+		// Update all levels
+		for i := 0; i < len(nextNode.next); i++ {
+			nextNode.next[i] = update[i]
+			update[i] = nextNode
+		}
+
+		if len(nextNode.next) > result.level {
+			result.level = len(nextNode.next)
+		}
+
+		result.size++
+		current = nextNode
+	}
+
+	// Add remaining nodes from l1
+	for curr1 != nil {
+		nextNode := &node{
+			key:   curr1.key,
+			value: curr1.value,
+			next:  make([]*node, result.calculateLevel()),
+		}
+
+		// Update all levels
+		for i := 0; i < len(nextNode.next); i++ {
+			nextNode.next[i] = update[i]
+			update[i] = nextNode
+		}
+
+		if len(nextNode.next) > result.level {
+			result.level = len(nextNode.next)
+		}
+
+		result.size++
+		current = nextNode
+		curr1 = curr1.next[0]
+	}
+
+	// Add remaining nodes from l2
+	for curr2 != nil {
+		nextNode := &node{
+			key:   curr2.key,
+			value: curr2.value,
+			next:  make([]*node, result.calculateLevel()),
+		}
+
+		// Update all levels
+		for i := 0; i < len(nextNode.next); i++ {
+			nextNode.next[i] = update[i]
+			update[i] = nextNode
+		}
+
+		if len(nextNode.next) > result.level {
+			result.level = len(nextNode.next)
+		}
+
+		result.size++
+		current = nextNode
+		curr2 = curr2.next[0]
+	}
+
+	// Fix head pointers
+	for i := 0; i < result.level; i++ {
+		result.head.next[i] = update[i]
+	}
+
+	return result
 }
