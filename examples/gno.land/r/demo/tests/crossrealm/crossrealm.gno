@@ -77,3 +77,18 @@ func CallFooerGetterFooSR2() {
 
 	withswitch(fooerGetter().Foo)()
 }
+
+var Counter int = 42
+
+type Notebook struct {
+	Counter *int
+}
+
+func (n *Notebook) Inc() *Notebook {
+	*n.Counter++
+	return n
+}
+
+func (n *Notebook) String() string {
+	return ufmt.Sprintf("Notebook{%d}", *n.Counter)
+}

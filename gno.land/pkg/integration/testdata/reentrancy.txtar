@@ -1,0 +1,74 @@
+gnoland start
+
+gnokey maketx addpkg -pkgdir $WORK/safeloans -pkgpath gno.land/p/safeloans -gas-fee 1000000ugnot -gas-wanted 10000000 -broadcast -chainid=tendermint_test test1
+gnokey maketx addpkg -pkgdir $WORK/loan -pkgpath gno.land/r/loan -gas-fee 1000000ugnot -gas-wanted 10000000 -broadcast -chainid=tendermint_test test1
+gnokey maketx addpkg -pkgdir $WORK/evil -pkgpath gno.land/r/evil -gas-fee 1000000ugnot -gas-wanted 10000000 -broadcast -chainid=tendermint_test test1
+gnokey maketx call -pkgpath gno.land/r/loan -func CreateLoan -args 12345 -gas-fee 1000000ugnot -gas-wanted 1500000 -broadcast -chainid=tendermint_test test1
+#stdout 'foobarbaz'
+
+-- evil/evil.gno --
+package evil
+import (
+    "std"
+    "gno.land/r/loan"
+)
+
+var _ = loan.CreateLoan
+var _ = std.PreviousRealm
+
+-- safeloans/safeloans.gno --
+package safeloans
+
+import "std"
+
+type SafeLoan struct {
+    amount uint64
+}
+
+func CreateSafeLoan(amount uint64) *SafeLoan {
+    return &SafeLoan{
+        amount: amount,
+    }
+}
+
+func (l *SafeLoan) Withdraw() uint64 {
+    // switchrealm()
+
+    banker := std.NewBanker(std.BankerTypeRealmSend)
+    send := std.Coins{{"ugnot", int64(l.amount)}}
+    owner := std.PreviousRealm().Address()
+    pkgaddr := std.CurrentRealm().Address()
+    banker.SendCoins(pkgaddr, owner, send)
+
+    return l.amount
+}
+
+-- loan/loan.gno --
+package loan
+
+import "std"
+import "gno.land/p/safeloans"
+
+var _ = std.PreviousRealm
+
+func CreateLoan(amount uint64) *safeloans.SafeLoan {
+    // switchrealm()  
+    return safeloans.CreateSafeLoan(amount)
+}
+
+
+func PackageLoans(loans... []*safeloans.SafeLoan) *safeloans.SafeLoan {
+    // switchrealm() 
+    
+    var sumReceived uint64
+    for _, loan := range loans {
+        // Use withswitch to enforce realm boundary crossing
+        //received := withswitch(loan.Withdraw)()
+        if loan != nil {
+            //received := loan.Withdraw()
+            //sumReceived += received
+        }
+    }
+    
+    return CreateLoan(sumReceived)
+}

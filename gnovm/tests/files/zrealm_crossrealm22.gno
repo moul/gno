@@ -352,10 +352,9 @@ func main() {
 //                          "BlockNode": null,
 //                          "Location": {
 //     -                        "Column": "23",
-//     -                        "File": "crossrealm.gno",
-//     -                        "Line": "25",
 //     +                        "Column": "62",
-//     +                        "File": "crossrealm.gno",
+//                              "File": "crossrealm.gno",
+//     -                        "Line": "25",
 //     +                        "Line": "26",
 //                              "PkgPath": "gno.land/r/demo/tests/crossrealm_b"
 //                          }
