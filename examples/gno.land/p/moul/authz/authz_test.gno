@@ -13,6 +13,7 @@ import (
 func TestNew(t *testing.T) {
 	testAddr := testutils.TestAddress("alice")
 	testing.SetOriginCaller(testAddr)
+	testing.SetRealm(std.NewUserRealm("g1user"))
 
 	auth := New()
 
@@ -29,6 +30,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewWithAuthority(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	testAddr := testutils.TestAddress("alice")
 	memberAuth := NewMemberAuthority(testAddr)
 
@@ -39,6 +42,8 @@ func TestNewWithAuthority(t *testing.T) {
 }
 
 func TestAuthorizerAuthorize(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	testAddr := testutils.TestAddress("alice")
 	testing.SetOriginCaller(testAddr)
 
@@ -79,6 +84,8 @@ func TestAuthorizerAuthorize(t *testing.T) {
 }
 
 func TestAuthorizerTransfer(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	testAddr := testutils.TestAddress("alice")
 	testing.SetOriginCaller(testAddr)
 
@@ -111,6 +118,8 @@ func TestAuthorizerTransfer(t *testing.T) {
 }
 
 func TestAuthorizerTransferChain(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	testAddr := testutils.TestAddress("alice")
 	testing.SetOriginCaller(testAddr)
 
@@ -143,6 +152,8 @@ func TestAuthorizerTransferChain(t *testing.T) {
 }
 
 func TestAuthorizerWithDroppedAuthority(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	testAddr := testutils.TestAddress("alice")
 	testing.SetOriginCaller(testAddr)
 
@@ -164,6 +175,8 @@ func TestAuthorizerWithDroppedAuthority(t *testing.T) {
 }
 
 func TestContractAuthorityHandlerExecutionOnce(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	attempts := 0
 	executed := 0
 
@@ -197,6 +210,8 @@ func TestContractAuthorityHandlerExecutionOnce(t *testing.T) {
 }
 
 func TestContractAuthorityExecutionTwice(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	executed := 0
 
 	contractAuth := NewContractAuthority("gno.land/r/test", func(title string, action PrivilegedAction) error {
@@ -227,6 +242,8 @@ func TestContractAuthorityExecutionTwice(t *testing.T) {
 }
 
 func TestContractAuthorityWithProposer(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	testAddr := testutils.TestAddress("alice")
 	memberAuth := NewMemberAuthority(testAddr)
 
@@ -309,6 +326,8 @@ func TestAutoAcceptAuthorityWithArgs(t *testing.T) {
 }
 
 func TestMemberAuthorityMultipleMembers(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	alice := testutils.TestAddress("alice")
 	bob := testutils.TestAddress("bob")
 	carol := testutils.TestAddress("carol")
@@ -355,6 +374,8 @@ func TestMemberAuthorityMultipleMembers(t *testing.T) {
 }
 
 func TestAuthorizerCurrentNeverNil(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	auth := New()
 
 	// Current should never be nil after initialization
@@ -367,6 +388,8 @@ func TestAuthorizerCurrentNeverNil(t *testing.T) {
 }
 
 func TestAuthorizerString(t *testing.T) {
+	testing.SetRealm(std.NewUserRealm("g1user"))
+
 	auth := New()
 
 	// Test initial string representation
