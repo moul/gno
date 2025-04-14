@@ -34,6 +34,9 @@ const (
 	// DefaultCaller is the result of gno.DerivePkgAddr("user1.gno"),
 	// used as the default caller in [Context].
 	DefaultCaller crypto.Bech32Address = "g1wymu47drhr0kuq2098m792lytgtj2nyx77yrsm"
+	// DefaultUserRealm is the CurrentRealm.Addr value used by default in
+	// [Context].
+	DefaultUserRealm = "g1user"
 )
 
 // Context returns a TestExecContext. Usable for test purpose only.
@@ -64,9 +67,11 @@ func Context(caller crypto.Bech32Address, pkgPath string, send std.Coins) *tests
 		Params:          newTestParams(),
 		EventLogger:     sdk.NewEventLogger(),
 	}
+	frames := make(map[*gno.Frame]teststd.RealmOverride)
+	//	frames[&gno.Frame{}]
 	return &teststd.TestExecContext{
 		ExecContext: ctx,
-		RealmFrames: make(map[*gno.Frame]teststd.RealmOverride),
+		RealmFrames: frames,
 	}
 }
 
@@ -76,7 +81,7 @@ func Machine(testStore gno.Store, output io.Writer, pkgPath string, debug bool) 
 	return gno.NewMachineWithOptions(gno.MachineOptions{
 		Store:   testStore,
 		Output:  output,
-		Context: Context("", pkgPath, nil),
+		Context: Context("g1user", pkgPath, nil),
 		Debug:   debug,
 	})
 }
