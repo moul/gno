@@ -36,6 +36,10 @@ build:
 test:
 	go run ../gnovm/cmd/gno test -v ./gno.land/...
 
+.PHONY: test.txtar
+test.txtar:
+	cd ../gno.land/pkg/integration && go test -run TestExamplesTxtar $(GOTEST_FLAGS)
+
 .PHONY: test.fast
 test.fast:
 	go run ../gnovm/cmd/gno test -failfast -v  ./... 

@@ -1,0 +1,23 @@
+# Test atomic swap realm basic functionality
+
+# Load the existing atomicswap package
+loadpkg gno.land/r/demo/atomicswap
+
+# Start the blockchain
+gnoland start
+
+# Query initial render (should show empty list)
+gnokey query vm/qrender --data 'gno.land/r/demo/atomicswap:'
+
+# Create a swap with 1000ugnot
+gnokey maketx call -pkgpath gno.land/r/demo/atomicswap -func NewCoinSwap -args "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5" -args "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b" -send 1000ugnot -gas-fee 1000000ugnot -gas-wanted 10000000 -broadcast -chainid=tendermint_test test1
+stdout 'OK!'
+
+# Query render to see the swap was created
+gnokey query vm/qrender --data 'gno.land/r/demo/atomicswap:1'
+stdout 'status: active'
+stdout 'amount: 1000ugnot'
+
+# Query home page should show the swap
+gnokey query vm/qrender --data 'gno.land/r/demo/atomicswap:'
+stdout '1000ugnot'
