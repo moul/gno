@@ -24,17 +24,21 @@ func NewHandler(vm *VMKeeper) vmHandler {
 }
 
 func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
+	var result sdk.Result
+	
 	switch msg := msg.(type) {
 	case MsgAddPackage:
-		return vh.handleMsgAddPackage(ctx, msg)
+		result = vh.handleMsgAddPackage(ctx, msg)
 	case MsgCall:
-		return vh.handleMsgCall(ctx, msg)
+		result = vh.handleMsgCall(ctx, msg)
 	case MsgRun:
-		return vh.handleMsgRun(ctx, msg)
+		result = vh.handleMsgRun(ctx, msg)
 	default:
 		errMsg := fmt.Sprintf("unrecognized vm message type: %T", msg)
 		return abciResult(std.ErrUnknownRequest(errMsg))
 	}
+	
+	return result
 }
 
 // Handle MsgAddPackage.
@@ -65,6 +69,7 @@ func (vh vmHandler) handleMsgRun(ctx sdk.Context, msg MsgRun) (res sdk.Result) {
 	res.Data = []byte(resstr)
 	return
 }
+
 
 // ----------------------------------------
 // Query

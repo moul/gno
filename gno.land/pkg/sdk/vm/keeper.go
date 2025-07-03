@@ -42,6 +42,7 @@ const (
 	maxGasQuery   = 3_000_000_000 // same as max block gas
 )
 
+
 // vm.VMKeeperI defines a module interface that supports Gno
 // smart contracts programming (scripting).
 type VMKeeperI interface {
@@ -71,6 +72,10 @@ type VMKeeper struct {
 
 	// cached, the DeliverTx persistent state.
 	gnoStore gno.Store
+	
+	// sudoMsgQueue holds messages queued by contracts via realm.Sudo
+	sudoMsgQueue []sdk.SudoMessage
+	sudoMsgMutex sync.Mutex
 }
 
 // NewVMKeeper returns a new VMKeeper.
@@ -981,4 +986,66 @@ func logTelemetry(
 		gasUsed,
 		metric.WithAttributes(attributes...),
 	)
+}
+
+// GetSudoMessages returns the list of sudo messages queued by contracts
+func (vm *VMKeeper) GetSudoMessages() []sdk.SudoMessage {
+	vm.sudoMsgMutex.Lock()
+	defer vm.sudoMsgMutex.Unlock()
+	
+	// Return a copy to prevent external modification
+	messages := make([]sdk.SudoMessage, len(vm.sudoMsgQueue))
+	copy(messages, vm.sudoMsgQueue)
+	return messages
+}
+
+// ClearSudoMessages clears the sudo message queue
+func (vm *VMKeeper) ClearSudoMessages() {
+	vm.sudoMsgMutex.Lock()
+	defer vm.sudoMsgMutex.Unlock()
+	
+	vm.sudoMsgQueue = nil
+}
+
+// QueueSudoMessage adds a message to the sudo queue
+// This is called by the realm.Sudo native function
+func (vm *VMKeeper) QueueSudoMessage(sender crypto.Address, msg sdk.Msg) {
+	vm.sudoMsgMutex.Lock()
+	defer vm.sudoMsgMutex.Unlock()
+	
+	vm.sudoMsgQueue = append(vm.sudoMsgQueue, sdk.SudoMessage{
+		Sender:  sender,
+		Message: msg,
+	})
+}
+
+// QueueSudoMessageFromRealm is a helper that creates properly formatted messages
+// for known VM message types with the realm as sender
+func (vm *VMKeeper) QueueSudoMessageFromRealm(realmAddr crypto.Address, msgType string, msgData interface{}) error {
+	switch msgType {
+	case "MsgCall":
+		data := msgData.(map[string]interface{})
+		msg := MsgCall{
+			Caller:  realmAddr,
+			Send:    data["send"].(std.Coins),
+			PkgPath: data["pkg_path"].(string),
+			Func:    data["func"].(string),
+			Args:    data["args"].([]string),
+		}
+		vm.QueueSudoMessage(realmAddr, msg)
+		
+	case "MsgAddPackage":
+		data := msgData.(map[string]interface{})
+		msg := MsgAddPackage{
+			Creator: realmAddr,
+			Package: data["package"].(*std.MemPackage),
+			Deposit: data["deposit"].(std.Coins),
+		}
+		vm.QueueSudoMessage(realmAddr, msg)
+		
+	default:
+		return fmt.Errorf("unknown message type for sudo: %s", msgType)
+	}
+	
+	return nil
 }

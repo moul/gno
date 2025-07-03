@@ -179,6 +179,9 @@ func NewAppWithOptions(cfg *AppOptions) (abci.Application, error) {
 	baseApp.Router().AddRoute("params", params.NewHandler(prmk))
 	baseApp.Router().AddRoute("vm", vm.NewHandler(vmk))
 
+	// Set the sudo keeper so the app can process sudo messages
+	baseApp.SetSudoKeeper(vmk)
+
 	// Load latest version.
 	if err := baseApp.LoadLatestVersion(); err != nil {
 		return nil, err

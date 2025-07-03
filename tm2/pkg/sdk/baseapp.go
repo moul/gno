@@ -45,6 +45,8 @@ type BaseApp struct {
 	beginTxHook BeginTxHook // BaseApp-specific hook run before running transaction messages.
 	endTxHook   EndTxHook   // BaseApp-specific hook run after running transaction messages.
 
+	sudoKeeper SudoKeeper // keeper that manages sudo messages
+
 	// --------------------
 	// Volatile state
 	// checkState is set on initialization and reset on Commit.
@@ -216,6 +218,14 @@ func (app *BaseApp) initFromMainStore() error {
 
 func (app *BaseApp) setMinGasPrices(gasPrices []GasPrice) {
 	app.minGasPrices = gasPrices
+}
+
+// SetSudoKeeper sets the sudo keeper for the BaseApp.
+func (app *BaseApp) SetSudoKeeper(keeper SudoKeeper) {
+	if app.sealed {
+		panic("SetSudoKeeper() on sealed BaseApp")
+	}
+	app.sudoKeeper = keeper
 }
 
 // Returns a read-only (cache) MultiStore.
@@ -641,6 +651,43 @@ func (app *BaseApp) getContextForTx(mode RunTxMode, txBytes []byte) (ctx Context
 	return
 }
 
+// processSudoMessages processes any messages queued by contracts via sudo functionality
+func (app *BaseApp) processSudoMessages(ctx Context, mode RunTxMode) (result Result) {
+	// Get sudo messages from the keeper
+	sudoMessages := app.sudoKeeper.GetSudoMessages()
+	if len(sudoMessages) == 0 {
+		return Result{}
+	}
+
+	// Clear the queue to prevent reprocessing
+	app.sudoKeeper.ClearSudoMessages()
+
+	// Process each sudo message with its sender context
+	for _, sudoMsg := range sudoMessages {
+		// Create a new context with the sender address
+		// This ensures proper authorization for the message
+		msgCtx := ctx.WithValue(ContextKeySudoSender, sudoMsg.Sender)
+
+		// Process the message with the new context
+		msgResult := app.runMsgs(msgCtx, []Msg{sudoMsg.Message}, mode)
+		if !msgResult.IsOK() {
+			return msgResult
+		}
+
+		// Accumulate results
+		if result.Data == nil {
+			result = msgResult
+		} else {
+			result.Data = append(result.Data, msgResult.Data...)
+			result.Events = append(result.Events, msgResult.Events...)
+			result.Log += "\n" + msgResult.Log
+			result.GasUsed += msgResult.GasUsed
+		}
+	}
+
+	return result
+}
+
 // / runMsgs iterates through all the messages and executes them.
 func (app *BaseApp) runMsgs(ctx Context, msgs []Msg, mode RunTxMode) (result Result) {
 	ctx = ctx.WithEventLogger(NewEventLogger())
@@ -866,6 +913,16 @@ func (app *BaseApp) runTx(ctx Context, tx Tx) (result Result) {
 	// Safety check: don't write the cache state unless we're in DeliverTx.
 	if mode != RunTxModeDeliver {
 		return result
+	}
+
+	// Process sudo messages if the main messages succeeded
+	if result.IsOK() && app.sudoKeeper != nil {
+		sudoResult := app.processSudoMessages(runMsgCtx, mode)
+		if !sudoResult.IsOK() {
+			// If sudo messages fail, fail the entire transaction
+			result = sudoResult
+			result.GasWanted = gasWanted
+		}
 	}
 
 	if app.endTxHook != nil {
