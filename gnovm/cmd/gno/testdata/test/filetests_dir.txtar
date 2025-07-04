@@ -1,0 +1,60 @@
+# Test filetests directory support
+
+# Create filetests directory first
+mkdir filetests
+
+# Run tests - should execute all filetests
+gno test -v .
+
+stdout 'Testing Add function'
+stdout 'Hello from filetests directory!'
+stdout 'Traditional filetest'
+stderr '=== RUN   ./traditional_filetest.gno'
+stderr '--- PASS: ./traditional_filetest.gno'
+stderr '=== RUN   ./add_test.gno'
+stderr '--- PASS: ./add_test.gno'
+stderr '=== RUN   ./hello.gno'
+stderr '--- PASS: ./hello.gno'
+stderr 'ok'
+
+-- gno.mod --
+module gno.land/p/demo/mypackage
+
+-- mypackage.gno --
+package mypackage
+
+func Add(a, b int) int {
+	return a + b
+}
+
+-- traditional_filetest.gno --
+package main
+
+func main() {
+	println("Traditional filetest")
+}
+
+// Output:
+// Traditional filetest
+
+-- filetests/add_test.gno --
+package main
+
+func main() {
+	println("Testing Add function")
+	println("2 + 3 =", 5)
+}
+
+// Output:
+// Testing Add function
+// 2 + 3 = 5
+
+-- filetests/hello.gno --
+package main
+
+func main() {
+	println("Hello from filetests directory!")
+}
+
+// Output:
+// Hello from filetests directory!

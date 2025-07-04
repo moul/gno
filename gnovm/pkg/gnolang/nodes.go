@@ -1291,6 +1291,20 @@ func ReadMemPackage(dir string, pkgPath string) (*std.MemPackage, error) {
 	}
 
 	list := make([]string, 0, len(files))
+	
+	// Also read files from filetests/ subdirectory if it exists
+	filetestsDir := filepath.Join(dir, "filetests")
+	if fi, err := os.Stat(filetestsDir); err == nil && fi.IsDir() {
+		filetestFiles, err := os.ReadDir(filetestsDir)
+		if err == nil {
+			for _, file := range filetestFiles {
+				if !file.IsDir() && strings.HasSuffix(file.Name(), ".gno") {
+					list = append(list, filepath.Join(filetestsDir, file.Name()))
+				}
+			}
+		}
+	}
+	
 	for _, file := range files {
 		// Ignore directories and hidden files, only include allowed files & extensions,
 		// then exclude files that are of the bad extensions.
@@ -1343,6 +1357,10 @@ func ReadMemPackageFromList(list []string, pkgPath string, mtype MemPackageType)
 	var errs error            // all errors minus filetest pkg name errors.
 	for _, fpath := range list {
 		fname := filepath.Base(fpath)
+		// For files in subdirectories, preserve the relative path
+		if strings.Contains(fpath, "/filetests/") {
+			fname = "filetests/" + filepath.Base(fpath)
+		}
 		bz, err := os.ReadFile(fpath)
 		if err != nil {
 			return nil, err

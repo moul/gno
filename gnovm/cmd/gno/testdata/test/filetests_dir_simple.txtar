@@ -1,0 +1,24 @@
+# Test filetests directory support - simple case
+
+# Create filetests directory
+mkdir filetests
+
+# Run tests - should find filetest in subdirectory
+gno test -v .
+
+stdout 'Hello from filetests'
+stderr '=== RUN   .*/hello.gno'
+stderr '--- PASS: .*/hello.gno'
+
+-- dummy.gno --
+package dummy
+
+-- filetests/hello_filetest.gno --
+package main
+
+func main() {
+	println("Hello from filetests")
+}
+
+// Output:
+// Hello from filetests

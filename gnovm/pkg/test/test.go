@@ -547,8 +547,13 @@ func parseMemPackageTests(mpkg *std.MemPackage) (tset, itset *gno.FileSet, itfil
 		if n == nil {
 			panic("should not happen")
 		}
+		// Check if file is in filetests/ directory or has _filetest.gno suffix
+		isFiletest := strings.HasSuffix(mfile.Name, "_filetest.gno") || 
+			strings.HasPrefix(mfile.Name, "filetests/") || 
+			strings.HasPrefix(mfile.Name, "filetests"+string(filepath.Separator))
+		
 		switch {
-		case strings.HasSuffix(mfile.Name, "_filetest.gno"):
+		case isFiletest:
 			ftfiles = append(ftfiles, mfile)
 		case strings.HasSuffix(mfile.Name, "_test.gno") && mpkg.Name == string(n.PkgName):
 			tset.AddFiles(n)

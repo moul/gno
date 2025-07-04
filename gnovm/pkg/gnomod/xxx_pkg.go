@@ -151,6 +151,18 @@ func SubPkgsFromPaths(paths []string) ([]*SubPkg, error) {
 			subPkg.GnoFiles = append(subPkg.GnoFiles, match)
 		}
 
+		// Also look for filetests in the filetests/ subdirectory
+		filetestsDir := filepath.Join(path, "filetests")
+		if fi, err := os.Stat(filetestsDir); err == nil && fi.IsDir() {
+			// Look for all .gno files in filetests/ directory
+			filetestMatches, err := filepath.Glob(filepath.Join(filetestsDir, "*.gno"))
+			if err != nil {
+				return nil, fmt.Errorf("failed to match pattern in filetests dir: %w", err)
+			}
+			// All .gno files in filetests/ are considered filetests
+			subPkg.FiletestGnoFiles = append(subPkg.FiletestGnoFiles, filetestMatches...)
+		}
+
 		subPkgs = append(subPkgs, &subPkg)
 	}
 
