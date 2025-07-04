@@ -8,6 +8,7 @@ import (
 	"gno.land/p/demo/fqname"
 	"gno.land/p/demo/grc/grc20"
 	"gno.land/p/demo/ufmt"
+	"gno.land/p/moul/mdtable"
 )
 
 var registry = avl.NewTree() // rlmPath[.slug] -> *Token (slug is optional)
@@ -42,20 +43,34 @@ func Render(path string) string {
 	switch {
 	case path == "": // home
 		// TODO: add pagination
-		s := ""
+		s := "# GRC20 Token Registry\n\n"
+		
+		// Create table for token listings
+		table := mdtable.New([]string{"Token Name", "Symbol", "Decimals", "Realm", "Info"})
 		count := 0
+		
 		registry.Iterate("", "", func(key string, tokenI any) bool {
 			count++
 			token := tokenI.(*grc20.Token)
 			rlmPath, slug := fqname.Parse(key)
 			rlmLink := fqname.RenderLink(rlmPath, slug)
-			infoLink := "/r/demo/grc20reg:" + key
-			s += ufmt.Sprintf("- **%s** - %s - [info](%s)\n", token.GetName(), rlmLink, infoLink)
+			infoLink := ufmt.Sprintf("[details](/r/demo/grc20reg:%s)", key)
+			
+			table.AddRow([]string{
+				token.GetName(),
+				token.GetSymbol(),
+				ufmt.Sprintf("%d", token.GetDecimals()),
+				rlmLink,
+				infoLink,
+			})
 			return false
 		})
+		
 		if count == 0 {
-			return "No registered token."
+			return "No registered tokens."
 		}
+		
+		s += table.String()
 		return s
 	default: // specific token
 		key := path
