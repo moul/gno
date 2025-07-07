@@ -2,20 +2,12 @@ package gnolang
 
 import (
 	"fmt"
-	"go/parser"
-	"go/token"
 	"math"
-	"os"
-	"path"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
-
-	"github.com/gnolang/gno/tm2/pkg/std"
-	"go.uber.org/multierr"
 )
 
 // ----------------------------------------
@@ -1485,7 +1477,6 @@ func ParseMemPackage(mpkg *std.MemPackage) (fset *FileSet) {
 	}
 	return fset
 }
-
 func (fs *FileSet) AddFiles(fns ...*FileNode) {
 	fs.Files = append(fs.Files, fns...)
 }
