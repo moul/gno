@@ -39,7 +39,6 @@ const gnoPrefix = "gno.land"
 type broCfg struct {
 	readonly       bool
 	remote         string
-	dev            bool
 	devRemote      string
 	chainID        string
 	defaultAccount string
@@ -48,15 +47,15 @@ type broCfg struct {
 	sshHostKeyPath string
 	banner         bool
 	jsonlog        bool
+	local          bool
 }
 
 var defaultBroOptions = broCfg{
-	remote:         "127.0.0.1:26657",
-	dev:            true,
+	remote:         "https://rpc.gno.land:443",
 	devRemote:      "",
 	sshListener:    "",
 	defaultRealm:   "gno.land/r/gnoland/home",
-	chainID:        "dev",
+	chainID:        "staging",
 	sshHostKeyPath: ".ssh/id_ed25519",
 }
 
@@ -126,18 +125,11 @@ func (c *broCfg) RegisterFlags(fs *flag.FlagSet) {
 		"ssh host key path",
 	)
 
-	fs.BoolVar(
-		&c.dev,
-		"dev",
-		defaultBroOptions.dev,
-		"enable dev mode and connect to gnodev for realtime update",
-	)
-
 	fs.StringVar(
 		&c.devRemote,
 		"dev-remote",
 		defaultBroOptions.devRemote,
-		"dev endpoint, if empty will default to `ws://<target>:8888`",
+		"dev endpoint for --local, if empty will default to `ws://127.0.0.1:8888`",
 	)
 
 	fs.BoolVar(
@@ -160,11 +152,34 @@ func (c *broCfg) RegisterFlags(fs *flag.FlagSet) {
 		defaultBroOptions.jsonlog,
 		"display server log as json format",
 	)
+
+	fs.BoolVar(
+		&c.local,
+		"local",
+		false,
+		"connect to local gnodev instance with hot reload",
+	)
 }
 
 func execBrowser(cfg *broCfg, args []string, cio commands.IO) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Handle --local flag
+	if cfg.local {
+		cfg.remote = "127.0.0.1:26657"
+		cfg.chainID = "dev"
+		if cfg.devRemote == "" {
+			cfg.devRemote = "ws://127.0.0.1:8888"
+		}
+		
+		// Check if gnodev is running
+		if err := checkGnodevRunning(cfg.remote); err != nil {
+			cio.ErrPrintfln("Warning: gnodev doesn't seem to be running on %s", cfg.remote)
+			cio.ErrPrintfln("To start gnodev, run: gnodev")
+			cio.ErrPrintfln("")
+		}
+	}
 
 	home := gnoenv.HomeDir()
 
@@ -239,7 +254,7 @@ func runLocal(ctx context.Context, gnocl *gnoclient.Client, cfg *broCfg, bcfg br
 	)
 
 	var errgs errgroup.Group
-	if cfg.dev {
+	if cfg.local {
 		devpoint, err := getDevEndpoint(cfg)
 		if err != nil {
 			return fmt.Errorf("unable to parse dev endpoint: %w", err)
@@ -370,6 +385,17 @@ func runServer(ctx context.Context, gnocl *gnoclient.Client, cfg *broCfg, bcfg b
 }
 
 func getDevEndpoint(cfg *broCfg) (string, error) {
+	// For --local, devRemote is already set with the right WebSocket URL
+	if cfg.local && strings.HasPrefix(cfg.devRemote, "ws://") {
+		devpoint, err := url.Parse(cfg.devRemote)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse dev endpoint: %w", err)
+		}
+		devpoint.Path = "_events"
+		return devpoint.String(), nil
+	}
+
+	// Legacy logic for backward compatibility
 	var err error
 
 	// use remote address as default
@@ -510,4 +536,19 @@ func newLogger(out io.Writer, json bool) *slog.Logger {
 	charmlogger := charmlog.New(out)
 	charmlogger.SetLevel(charmlog.DebugLevel)
 	return slog.New(charmlogger)
+}
+
+func checkGnodevRunning(remote string) error {
+	// Try to connect to the gnodev RPC endpoint
+	cl, err := client.NewHTTPClient(remote)
+	if err != nil {
+		return err
+	}
+	
+	// Try a simple RPC call to check if gnodev is responsive
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	_, err = cl.Status(ctx)
+	return err
 }
