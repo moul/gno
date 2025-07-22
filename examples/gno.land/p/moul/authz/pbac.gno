@@ -2,7 +2,7 @@ package authz
 
 import (
 	"std"
-	
+
 	"gno.land/p/moul/addrset"
 )
 
@@ -31,6 +31,19 @@ func New() (Authority, *PBACPrivateConfig) {
 	return pbac, cfg
 }
 
+// NewWithOrigin creates a new PBAC instance with origin caller as admin.
+// Should be called from init() where std.PreviousRealm() is origin.
+func NewWithOrigin() (Authority, *PBACPrivateConfig) {
+	origin := std.OriginCaller()
+	previous := std.PreviousRealm()
+	if origin != previous.Address() {
+		panic("NewWithOrigin() should be called from init() where std.PreviousRealm() is origin")
+	}
+	auth, cfg := New()
+	cfg.Add(Admin, origin)
+	return auth, cfg
+}
+
 // Authority interface defines the methods for authorization control.
 type Authority interface {
 	Can(addr std.Address, action string) bool
@@ -40,6 +53,8 @@ type Authority interface {
 	AssertCurrentCan(action string)
 	AssertPreviousCan(action string)
 	MembershipFor(action string) Membership
+	DoByCurrent(action string, fn func() error) error
+	DoByPrevious(action string, fn func() error) error
 }
 
 // Ensure PBAC implements Authority
@@ -144,6 +159,26 @@ type PBACPrivateConfig struct {
 	//      police DAO.
 }
 
+// Safe returns a SafeConfig wrapper that can be safely exposed.
+func (p *PBACPrivateConfig) Safe() *SafeConfig {
+	return &SafeConfig{cfg: p}
+}
+
+// SafeConfig provides a safe, exposable interface for admin configuration.
+type SafeConfig struct {
+	cfg *PBACPrivateConfig
+}
+
+// TransferAdminTo transfers admin privileges to a new membership.
+func (s *SafeConfig) TransferAdminTo(newAdmin Membership) {
+	s.cfg.Set(Admin, newAdmin)
+}
+
+// GetAdminMembership returns the current admin membership.
+func (s *SafeConfig) GetAdminMembership() Membership {
+	return s.cfg.MembershipFor(Admin)
+}
+
 // Set sets the Membership for the specified action.
 func (p *PBACPrivateConfig) Set(action string, membership Membership) {
 	p.memberships[action] = membership
@@ -152,7 +187,7 @@ func (p *PBACPrivateConfig) Set(action string, membership Membership) {
 // Add adds addresses or a membership to the specified action.
 func (p *PBACPrivateConfig) Add(action string, addrsOrMembership ...interface{}) {
 	existing := p.memberships[action]
-	
+
 	// Handle different types of arguments
 	for _, arg := range addrsOrMembership {
 		switch v := arg.(type) {
@@ -188,7 +223,7 @@ func (p *PBACPrivateConfig) Add(action string, addrsOrMembership ...interface{})
 			}
 		}
 	}
-	
+
 	p.memberships[action] = existing
 }
 

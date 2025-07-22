@@ -6,9 +6,20 @@ import (
 	"gno.land/p/moul/authz"
 )
 
-var auth *authz.Authorizer
+var (
+	auth       authz.Authority
+	privConfig *authz.PBACPrivateConfig
+)
 
-func Auth() *authz.Authorizer {
+func init() {
+	// Initialize with origin caller as admin
+	auth, privConfig = authz.NewWithOrigin()
+	
+	// Origin is automatically set as admin
+	// Admin has all permissions by default
+}
+
+func Auth() authz.Authority {
 	return auth
 }
 

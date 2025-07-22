@@ -83,10 +83,10 @@ func ExampleAuthority_basic() {
 func ExampleAuthority_composition() {
 	// init
 	var (
-		martialLaw bool = false
-		govdao     govdaoType     // mock instance
-		policedao  policedaoType // mock instance
-		worxdao    worxdaoType   // mock instance
+		martialLaw  bool            = false
+		govdao      govdaoType      // mock instance
+		policedao   policedaoType   // mock instance
+		worxdao     worxdaoType     // mock instance
 		authz_grc20 authz_grc20Type // mock instance
 		// simple memberships
 		admins             authz.Membership = addrset.New("g1admin")
@@ -145,12 +145,12 @@ func ExampleActionable_dao() {
 	// TODO: implement NewContractActionable
 	_ = auth.MembershipFor("propose")
 	_ = auth.MembershipFor("execute")
-	
+
 	// contractBasedActioner := NewContractActionable(
 	//	auth.MembershipFor("propose"),
 	//	auth.MembershipFor("execute"),
 	//)
-	
+
 	//contractBasedActioner.ProposeByPrevious("do_this", func() error {
 	//	println("execute")
 	//	return nil
@@ -160,8 +160,8 @@ func ExampleActionable_dao() {
 // mocks
 type govdaoType struct{} // replaces "import gno.land/r/gov/dao"
 
-func (g govdaoType) T1() *addrset.Set                           { return &addrset.Set{} } // TODO: implement properly
-func (g govdaoType) T2() *addrset.Set                           { return &addrset.Set{} } // TODO: implement properly
+func (g govdaoType) T1() *addrset.Set                          { return &addrset.Set{} } // TODO: implement properly
+func (g govdaoType) T2() *addrset.Set                          { return &addrset.Set{} } // TODO: implement properly
 func (g govdaoType) GetJoiningTime(addr std.Address) time.Time { return time.Now() }
 
 type policedaoType struct {

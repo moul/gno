@@ -4,21 +4,21 @@ import (
 	"errors"
 	"std"
 
-	"gno.land/p/moul/addrset"
 	"gno.land/p/moul/authz"
 )
 
 var (
-	Authority, privConfig = authz.NewWithOrigin("g1manfred47kzduec920z88wfr64ylksmdcedlf5")
-	SafeConfig            = privConfig.Safe()
+	Authority authz.Authority
+	privConfig *authz.PBACPrivateConfig
+	SafeConfig *authz.SafeConfig
 )
 
 func init() {
-	// Configure permissions for management actions
-	privConfig.Add("add_manager", "g1manfred47kzduec920z88wfr64ylksmdcedlf5")
-	privConfig.Add("remove_manager", "g1manfred47kzduec920z88wfr64ylksmdcedlf5")
-	privConfig.Add("transfer_management", "g1manfred47kzduec920z88wfr64ylksmdcedlf5")
-	privConfig.Add("call_privileged_action", "g1manfred47kzduec920z88wfr64ylksmdcedlf5")
+	Authority, privConfig = authz.NewWithOrigin()
+	SafeConfig = privConfig.Safe()
+	
+	// Origin is automatically set as admin
+	// No need to add specific permissions as admin has all permissions
 }
 
 func crossing() {
@@ -37,21 +37,21 @@ func PrivilegedAction() {
 // AddManager adds a new address to the list of authorized managers.
 func AddManager(addr std.Address) error {
 	Authority.AssertPreviousCan("add_manager")
-	
+
 	// Add the new manager to the admin membership
 	privConfig.Add(authz.Admin, addr)
 	privConfig.Add("add_manager", addr)
 	privConfig.Add("remove_manager", addr)
 	privConfig.Add("transfer_management", addr)
 	privConfig.Add("call_privileged_action", addr)
-	
+
 	return nil
 }
 
 // RemoveManager removes an address from the list of authorized managers.
 func RemoveManager(addr std.Address) error {
 	Authority.AssertPreviousCan("remove_manager")
-	
+
 	// Note: In the new authz system, we can't remove from composite memberships easily
 	// This would require a more sophisticated implementation with explicit manager tracking
 	// For now, return an error indicating this needs to be implemented
@@ -61,18 +61,18 @@ func RemoveManager(addr std.Address) error {
 // TransferManagement transfers the authority to manage keys to a new authority.
 func TransferManagement(newAuthority authz.Membership) error {
 	Authority.AssertPreviousCan("transfer_management")
-	
+
 	if newAuthority == nil {
 		return errors.New("new authority cannot be nil")
 	}
-	
+
 	// Transfer all management permissions to the new authority
 	privConfig.Set(authz.Admin, newAuthority)
 	privConfig.Set("add_manager", newAuthority)
 	privConfig.Set("remove_manager", newAuthority)
 	privConfig.Set("transfer_management", newAuthority)
 	privConfig.Set("call_privileged_action", newAuthority)
-	
+
 	return nil
 }
 
