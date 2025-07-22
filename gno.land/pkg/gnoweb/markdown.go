@@ -18,6 +18,7 @@ import (
 
 type MarkdownRendererConfig struct {
 	GoldmarkOptions []goldmark.Option
+	MDPackExtractor md.MDPackExtractor
 }
 
 func NewDefaultMarkdownRendererConfig(chromaOptions []chromahtml.Option) *MarkdownRendererConfig {
@@ -56,14 +57,28 @@ type MarkdownRenderer struct {
 var _ ContentRenderer = (*MarkdownRenderer)(nil)
 
 func NewMarkdownRenderer(logger *slog.Logger, cfg *MarkdownRendererConfig) *MarkdownRenderer {
+	opts := cfg.GoldmarkOptions
+	
+	// Add MDPack extension if extractor is provided
+	if cfg.MDPackExtractor != nil {
+		opts = append(opts, goldmark.WithExtensions(
+			md.NewMDPackExtension(
+				md.WithMDPackExtractor(cfg.MDPackExtractor),
+			),
+		))
+	}
+	
 	return &MarkdownRenderer{
 		logger:   logger,
-		markdown: goldmark.New(cfg.GoldmarkOptions...),
+		markdown: goldmark.New(opts...),
 	}
 }
 
 func (mr *MarkdownRenderer) Render(w io.Writer, u *weburl.GnoURL, src []byte) (md.Toc, error) {
 	ctx := md.NewGnoParserContext(u)
+	
+	// Store the current path in context for MDPack extension
+	ctx.Set(md.MDPackBasePathKey, u.Path)
 
 	// Use Goldmark for Markdown parsing
 	doc := mr.markdown.Parser().Parse(text.NewReader(src), parser.WithContext(ctx))

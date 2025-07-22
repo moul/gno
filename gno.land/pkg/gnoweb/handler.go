@@ -77,6 +77,7 @@ type WebHandler struct {
 	Client           WebClient
 	MarkdownRenderer *MarkdownRenderer
 	Aliases          map[string]AliasTarget
+	MDPackStorage    *MDPackStorage
 }
 
 // NewWebHandler creates a new WebHandler.
@@ -97,6 +98,21 @@ func NewWebHandler(logger *slog.Logger, cfg *WebHandlerConfig) (*WebHandler, err
 // ServeHTTP handles HTTP requests.
 func (h *WebHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Logger.Debug("receiving request", "method", r.Method, "path", r.URL.Path)
+	
+	// Check if this is an MDPack file request via query parameter
+	if h.MDPackStorage != nil && r.Method == "GET" && r.URL.Query().Get("file") != "" {
+		if h.tryServeMDPackFileByQuery(w, r) {
+			return
+		}
+	}
+	
+	// Check if this might be a virtual file from mdpack (legacy path-based)
+	if h.MDPackStorage != nil && r.Method == "GET" {
+		// Try to serve from mdpack storage if the file exists
+		if h.tryServeMDPackFile(w, r) {
+			return
+		}
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -704,4 +720,129 @@ func generateBreadcrumbPaths(url *weburl.GnoURL) components.BreadcrumbData {
 	}
 
 	return data
+}
+
+// tryServeMDPackFileByQuery attempts to serve a file from MDPack storage using query parameter
+func (h *WebHandler) tryServeMDPackFileByQuery(w http.ResponseWriter, r *http.Request) bool {
+	filename := r.URL.Query().Get("file")
+	if filename == "" {
+		return false
+	}
+	
+	// Get the base path (current URL without query)
+	basePath := r.URL.Path
+	
+	h.Logger.Debug("tryServeMDPackFileByQuery", "basePath", basePath, "filename", filename)
+	
+	// Try to get the file from storage
+	file, ok := h.MDPackStorage.GetFile(basePath, filename)
+	if !ok {
+		h.Logger.Debug("tryServeMDPackFileByQuery: file not found in storage")
+		return false
+	}
+	
+	h.Logger.Info("tryServeMDPackFileByQuery: serving virtual file", "filename", filename, "size", len(file.Content))
+	
+	// Set appropriate headers
+	if file.MimeType != "" {
+		w.Header().Set("Content-Type", file.MimeType)
+	} else {
+		// Try to detect content type
+		contentType := http.DetectContentType(file.Content)
+		w.Header().Set("Content-Type", contentType)
+	}
+	
+	// Use inline disposition for common displayable types
+	disposition := "inline"
+	if file.MimeType != "" {
+		// Force download for certain types
+		switch {
+		case strings.HasPrefix(file.MimeType, "application/octet-stream"):
+			disposition = "attachment"
+		case strings.HasPrefix(file.MimeType, "application/zip"):
+			disposition = "attachment"
+		case strings.HasPrefix(file.MimeType, "application/x-"):
+			disposition = "attachment"
+		}
+	}
+	
+	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=%q", disposition, file.Name))
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(file.Content)))
+	
+	// Write the file content
+	if _, err := w.Write(file.Content); err != nil {
+		h.Logger.Error("failed to write mdpack file", "err", err)
+	}
+	
+	return true
+}
+
+// tryServeMDPackFile attempts to serve a file from MDPack storage
+func (h *WebHandler) tryServeMDPackFile(w http.ResponseWriter, r *http.Request) bool {
+	// Extract the filename from the URL path
+	// For example: /r/docs/mdpack/logo.png -> logo.png
+	urlPath := r.URL.Path
+	
+	h.Logger.Debug("tryServeMDPackFile", "urlPath", urlPath)
+	
+	// Check if this looks like a file request (has an extension)
+	lastSlash := strings.LastIndex(urlPath, "/")
+	if lastSlash == -1 || lastSlash == len(urlPath)-1 {
+		h.Logger.Debug("tryServeMDPackFile: no filename found", "lastSlash", lastSlash)
+		return false
+	}
+	
+	filename := urlPath[lastSlash+1:]
+	if !strings.Contains(filename, ".") {
+		// No extension, probably not a file
+		h.Logger.Debug("tryServeMDPackFile: no extension", "filename", filename)
+		return false
+	}
+	
+	// Get the base path (everything before the filename)
+	basePath := urlPath[:lastSlash]
+	
+	h.Logger.Debug("tryServeMDPackFile: looking for file", "basePath", basePath, "filename", filename)
+	
+	// Try to get the file from storage
+	file, ok := h.MDPackStorage.GetFile(basePath, filename)
+	if !ok {
+		h.Logger.Debug("tryServeMDPackFile: file not found in storage")
+		return false
+	}
+	
+	h.Logger.Info("tryServeMDPackFile: serving virtual file", "filename", filename, "size", len(file.Content))
+	
+	// Set appropriate headers
+	if file.MimeType != "" {
+		w.Header().Set("Content-Type", file.MimeType)
+	} else {
+		// Try to detect content type
+		contentType := http.DetectContentType(file.Content)
+		w.Header().Set("Content-Type", contentType)
+	}
+	
+	// Use inline disposition for common displayable types
+	disposition := "inline"
+	if file.MimeType != "" {
+		// Force download for certain types
+		switch {
+		case strings.HasPrefix(file.MimeType, "application/octet-stream"):
+			disposition = "attachment"
+		case strings.HasPrefix(file.MimeType, "application/zip"):
+			disposition = "attachment"
+		case strings.HasPrefix(file.MimeType, "application/x-"):
+			disposition = "attachment"
+		}
+	}
+	
+	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=%q", disposition, file.Name))
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(file.Content)))
+	
+	// Write the file content
+	if _, err := w.Write(file.Content); err != nil {
+		h.Logger.Error("failed to write mdpack file", "err", err)
+	}
+	
+	return true
 }

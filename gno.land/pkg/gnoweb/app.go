@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/gnolang/gno/gno.land/pkg/gnoweb/components"
 	"github.com/gnolang/gno/tm2/pkg/bft/rpc/client"
@@ -49,6 +50,10 @@ type AppConfig struct {
 	Domain string
 	// Aliases is a map of aliases pointing to another path or a static file.
 	Aliases map[string]AliasTarget
+	// DisableMDPack disables the MDPack feature if set to true
+	DisableMDPack bool
+	// MDPackTTL sets the TTL for MDPack files (default: 30s)
+	MDPackTTL time.Duration
 }
 
 // NewDefaultAppConfig returns a new default [AppConfig]. The default sets
@@ -90,12 +95,29 @@ func NewRouter(logger *slog.Logger, cfg *AppConfig) (http.Handler, error) {
 		Analytics:  cfg.Analytics,
 	}
 
+	// Create MDPack storage if enabled
+	var mdpackStorage *MDPackStorage
+	if !cfg.DisableMDPack {
+		ttl := cfg.MDPackTTL
+		if ttl == 0 {
+			ttl = 30 * time.Second // Default 30 second TTL
+		}
+		cleanupInterval := ttl / 3
+		if cleanupInterval < 5*time.Second {
+			cleanupInterval = 5 * time.Second
+		}
+		mdpackStorage = NewMDPackStorageWithTTL(ttl, cleanupInterval)
+	}
+
 	// Configure Markdown renderer
 	markdownCfg := NewDefaultMarkdownRendererConfig(webcfg.ChromaHTMLOptions)
 	if cfg.UnsafeHTML {
 		markdownCfg.GoldmarkOptions = append(markdownCfg.GoldmarkOptions, goldmark.WithRendererOptions(
 			mdhtml.WithXHTML(), mdhtml.WithUnsafe(),
 		))
+	}
+	if mdpackStorage != nil {
+		markdownCfg.MDPackExtractor = mdpackStorage
 	}
 	markdownRenderer := NewMarkdownRenderer(logger, markdownCfg)
 
@@ -152,6 +174,11 @@ func NewRouter(logger *slog.Logger, cfg *AppConfig) (http.Handler, error) {
 
 	// Handle status page
 	mux.Handle("/status.json", handlerStatusJSON(logger, client))
+
+	// Pass mdpackStorage to webhandler (if enabled)
+	if mdpackStorage != nil {
+		webhandler.MDPackStorage = mdpackStorage
+	}
 
 	return mux, nil
 }
