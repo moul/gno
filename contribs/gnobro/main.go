@@ -36,178 +36,215 @@ import (
 
 const gnoPrefix = "gno.land"
 
-type broCfg struct {
+// Common configuration shared between remote and local modes
+type commonCfg struct {
 	readonly       bool
-	remote         string
-	devRemote      string
-	chainID        string
 	defaultAccount string
 	defaultRealm   string
 	sshListener    string
 	sshHostKeyPath string
 	banner         bool
 	jsonlog        bool
-	local          bool
 }
 
-var defaultBroOptions = broCfg{
-	remote:         "https://rpc.gno.land:443",
-	devRemote:      "",
-	sshListener:    "",
+// Remote configuration for connecting to standard Gno.land chains
+type remoteCfg struct {
+	commonCfg
+	remote  string
+	chainID string
+}
+
+// Local configuration for connecting to gnodev
+type localCfg struct {
+	commonCfg
+	endpoint string
+}
+
+var defaultCommonOptions = commonCfg{
 	defaultRealm:   "gno.land/r/gnoland/home",
-	chainID:        "staging",
 	sshHostKeyPath: ".ssh/id_ed25519",
 }
 
-func main() {
-	cfg := &broCfg{}
+var defaultRemoteOptions = remoteCfg{
+	commonCfg: defaultCommonOptions,
+	remote:    "https://rpc.gno.land:443",
+	chainID:   "portal-loop",
+}
 
+var defaultLocalOptions = localCfg{
+	commonCfg:      defaultCommonOptions,
+	endpoint: "ws://127.0.0.1:8888",
+}
+
+func main() {
 	stdio := commands.NewDefaultIO()
+	
+	// Main command (defaults to remote mode)
+	remoteCfg := &remoteCfg{}
 	cmd := commands.NewCommand(
 		commands.Metadata{
 			Name:       "gnobro",
-			ShortUsage: "gnobro [flags] [pkg_path]",
-			ShortHelp:  "Gno Browser, a realm explorer",
-			LongHelp: `Gnobro is a terminal user interface (TUI) that allows you to browse realms within your
-terminal. It automatically connects to Gnodev for real-time development. In
-addition to hot reload, it also has the ability to execute commands and interact
-with your realm.
-`,
+			ShortUsage: "gnobro [flags] [realm_path]",
+			ShortHelp:  "Gno Browser - browse Gno.land realms",
+			LongHelp: `Gnobro is a terminal user interface (TUI) for browsing Gno.land realms.
+
+By default, gnobro connects to the remote Gno.land chain.
+
+Examples:
+  gnobro                                    # Browse default realm
+  gnobro gno.land/r/demo/boards            # Browse specific realm
+  gnobro local                             # Connect to local gnodev
+  gnobro local gno.land/r/demo/boards      # Browse realm on local gnodev`,
 		},
-		cfg,
-		func(_ context.Context, args []string) error {
-			return execBrowser(cfg, args, stdio)
+		remoteCfg,
+		func(ctx context.Context, args []string) error {
+			return execRemote(ctx, remoteCfg, args, stdio)
 		})
 
+	// Add local subcommand
+	localCfg := &localCfg{}
+	localCmd := commands.NewCommand(
+		commands.Metadata{
+			Name:       "local",
+			ShortUsage: "gnobro local [flags] [realm_path]",
+			ShortHelp:  "Connect to local gnodev instance",
+			LongHelp: `Connect to a local gnodev instance for development.
+
+This mode provides:
+- Hot reload on code changes
+- Real-time event monitoring
+- Transaction result notifications
+- Development-focused UI
+
+The connection is established through gnodev's WebSocket endpoint.
+
+Examples:
+  gnobro local                             # Connect to default gnodev
+  gnobro local --endpoint ws://localhost:9999  # Custom endpoint`,
+		},
+		localCfg,
+		func(ctx context.Context, args []string) error {
+			return execLocal(ctx, localCfg, args, stdio)
+		})
+	
+	cmd.AddSubCommands(localCmd)
 	cmd.Execute(context.Background(), os.Args[1:])
 }
 
-func (c *broCfg) RegisterFlags(fs *flag.FlagSet) {
+// RegisterFlags for remoteCfg
+func (c *remoteCfg) RegisterFlags(fs *flag.FlagSet) {
+	// Common flags
+	c.commonCfg.RegisterFlags(fs)
+	
+	// Remote-specific flags
 	fs.StringVar(
 		&c.remote,
 		"remote",
-		defaultBroOptions.remote,
-		"remote gno.land URL",
+		defaultRemoteOptions.remote,
+		"remote gno.land RPC URL",
 	)
 
 	fs.StringVar(
 		&c.chainID,
 		"chainid",
-		defaultBroOptions.chainID,
-		"chainid",
+		defaultRemoteOptions.chainID,
+		"chain ID",
 	)
+}
 
+// RegisterFlags for localCfg
+func (c *localCfg) RegisterFlags(fs *flag.FlagSet) {
+	// Common flags
+	c.commonCfg.RegisterFlags(fs)
+	
+	// Local-specific flags
+	fs.StringVar(
+		&c.endpoint,
+		"endpoint",
+		defaultLocalOptions.endpoint,
+		"WebSocket endpoint for gnodev events",
+	)
+}
+
+// RegisterFlags for commonCfg
+func (c *commonCfg) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(
 		&c.defaultAccount,
 		"account",
-		defaultBroOptions.defaultAccount,
+		defaultCommonOptions.defaultAccount,
 		"default local account to use",
 	)
 
 	fs.StringVar(
 		&c.defaultRealm,
 		"default-realm",
-		defaultBroOptions.defaultRealm,
-		"default realm to display when gnobro starts and no argument is provided",
+		defaultCommonOptions.defaultRealm,
+		"default realm to display when gnobro starts",
 	)
 
 	fs.StringVar(
 		&c.sshListener,
 		"ssh",
-		defaultBroOptions.sshListener,
+		defaultCommonOptions.sshListener,
 		"ssh server listener address",
 	)
 
 	fs.StringVar(
 		&c.sshHostKeyPath,
 		"ssh-key",
-		defaultBroOptions.sshHostKeyPath,
+		defaultCommonOptions.sshHostKeyPath,
 		"ssh host key path",
-	)
-
-	fs.StringVar(
-		&c.devRemote,
-		"dev-remote",
-		defaultBroOptions.devRemote,
-		"dev endpoint for --local, if empty will default to `ws://127.0.0.1:8888`",
 	)
 
 	fs.BoolVar(
 		&c.banner,
 		"banner",
-		defaultBroOptions.banner,
-		"if enabled, display a banner",
+		defaultCommonOptions.banner,
+		"display a banner",
 	)
 
 	fs.BoolVar(
 		&c.readonly,
 		"readonly",
-		defaultBroOptions.readonly,
+		defaultCommonOptions.readonly,
 		"readonly mode, no commands allowed",
 	)
 
 	fs.BoolVar(
 		&c.jsonlog,
 		"jsonlog",
-		defaultBroOptions.jsonlog,
+		defaultCommonOptions.jsonlog,
 		"display server log as json format",
-	)
-
-	fs.BoolVar(
-		&c.local,
-		"local",
-		false,
-		"connect to local gnodev instance with hot reload",
 	)
 }
 
-func execBrowser(cfg *broCfg, args []string, cio commands.IO) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle --local flag
-	if cfg.local {
-		cfg.remote = "127.0.0.1:26657"
-		cfg.chainID = "dev"
-		if cfg.devRemote == "" {
-			cfg.devRemote = "ws://127.0.0.1:8888"
-		}
-		
-		// Check if gnodev is running
-		if err := checkGnodevRunning(cfg.remote); err != nil {
-			cio.ErrPrintfln("Warning: gnodev doesn't seem to be running on %s", cfg.remote)
-			cio.ErrPrintfln("To start gnodev, run: gnodev")
-			cio.ErrPrintfln("")
-		}
+// execRemote handles the default remote connection mode
+func execRemote(ctx context.Context, cfg *remoteCfg, args []string, cio commands.IO) error {
+	// Apply defaults if not set
+	if cfg.remote == "" {
+		cfg.remote = defaultRemoteOptions.remote
+	}
+	if cfg.chainID == "" {
+		cfg.chainID = defaultRemoteOptions.chainID
 	}
 
-	home := gnoenv.HomeDir()
-
-	var address string
-	var kb keys.Keybase
-	if cfg.defaultAccount != "" {
-		address = cfg.defaultAccount
-
-		var err error
-		kb, err = keys.NewKeyBaseFromDir(home)
-		if err != nil {
-			return fmt.Errorf("unable to load keybase: %w", err)
-		}
-	} else {
-		// create a inmemory keybase
-		kb = keys.NewInMemory()
-		kb.CreateAccount(integration.DefaultAccount_Name, integration.DefaultAccount_Seed, "", "", 0, 0)
-		address = integration.DefaultAccount_Name
-	}
-
-	signer, err := getSignerForAccount(cio, address, kb, cfg)
-	if err != nil {
-		return fmt.Errorf("unable to get signer for account %q: %w", address, err)
-	}
-
+	// Get node status to display version
 	cl, err := client.NewHTTPClient(cfg.remote)
 	if err != nil {
 		return fmt.Errorf("unable to create http client for %q: %w", cfg.remote, err)
+	}
+
+	status, err := cl.Status()
+	if err != nil {
+		cio.ErrPrintfln("Warning: unable to get node status: %v", err)
+	} else {
+		cio.Printfln("Connected to %s (version: %s)", cfg.remote, status.NodeInfo.Version)
+	}
+
+	// Setup signer and browser
+	signer, err := setupSigner(cio, cfg.defaultAccount, cfg.chainID)
+	if err != nil {
+		return err
 	}
 
 	gnocl := &gnoclient.Client{
@@ -215,81 +252,143 @@ func execBrowser(cfg *broCfg, args []string, cio commands.IO) error {
 		Signer:    signer,
 	}
 
-	var path string
-	switch {
-	case len(args) > 0:
-		path = strings.TrimSpace(args[0])
-		path = strings.TrimPrefix(path, gnoPrefix)
-	case cfg.defaultRealm != "":
-		path = strings.TrimLeft(cfg.defaultRealm, gnoPrefix)
-	}
+	// Get realm path from args
+	path := getRealmPath(args, cfg.defaultRealm)
 
+	// Create browser config
 	bcfg := browser.DefaultConfig()
 	bcfg.Readonly = cfg.readonly
-	bcfg.Renderer = lipgloss.DefaultRenderer()
 	bcfg.URLDefaultValue = path
 	bcfg.URLPrefix = gnoPrefix
-	bcfg.URLPrefix = gnoPrefix
 
-	if cfg.sshListener == "" {
-		if cfg.banner {
-			bcfg.Banner = NewGnoLandBanner()
-		}
-
-		return runLocal(ctx, gnocl, cfg, bcfg, cio)
-	}
-
-	return runServer(ctx, gnocl, cfg, bcfg, cio)
+	return runBrowser(ctx, gnocl, cfg.commonCfg, bcfg, cio, false)
 }
 
-func runLocal(ctx context.Context, gnocl *gnoclient.Client, cfg *broCfg, bcfg browser.Config, io commands.IO) error {
+// execLocal handles the local gnodev connection mode
+func execLocal(ctx context.Context, cfg *localCfg, args []string, cio commands.IO) error {
+	// Apply defaults if not set
+	if cfg.endpoint == "" {
+		cfg.endpoint = defaultLocalOptions.endpoint
+	}
+
+	// For now, we still need to know the RPC endpoint
+	// TODO: In the future, this should come from the gnodev WebSocket protocol
+	rpcEndpoint := "http://127.0.0.1:26657"
+	chainID := "dev"
+
+	// Check if gnodev is running
+	cl, err := client.NewHTTPClient(rpcEndpoint)
+	if err != nil {
+		return fmt.Errorf("unable to create http client: %w", err)
+	}
+
+	if _, err := cl.Status(); err != nil {
+		cio.ErrPrintfln("Error: gnodev doesn't seem to be running")
+		cio.ErrPrintfln("")
+		cio.ErrPrintfln("To start gnodev, run:")
+		cio.ErrPrintfln("  gnodev")
+		cio.ErrPrintfln("")
+		cio.ErrPrintfln("Or specify a different endpoint with --endpoint")
+		return fmt.Errorf("unable to connect to gnodev: %w", err)
+	}
+
+	cio.Printfln("Connected to gnodev @ %s", cfg.endpoint)
+	cio.Printfln("Hot reload enabled")
+
+	// Setup signer and browser
+	signer, err := setupSigner(cio, cfg.defaultAccount, chainID)
+	if err != nil {
+		return err
+	}
+
+	gnocl := &gnoclient.Client{
+		RPCClient: cl,
+		Signer:    signer,
+	}
+
+	// Get realm path from args
+	path := getRealmPath(args, cfg.defaultRealm)
+
+	// Create browser config
+	bcfg := browser.DefaultConfig()
+	bcfg.Readonly = cfg.readonly
+	bcfg.URLDefaultValue = path
+	bcfg.URLPrefix = gnoPrefix
+
+	// No banner in local mode
+
+	return runBrowserWithDev(ctx, gnocl, cfg.commonCfg, bcfg, cfg.endpoint, cio)
+}
+
+// Helper functions
+
+func getRealmPath(args []string, defaultRealm string) string {
+	var path string
+	if len(args) > 0 {
+		path = strings.TrimSpace(args[0])
+		path = strings.TrimPrefix(path, gnoPrefix)
+	} else if defaultRealm != "" {
+		path = strings.TrimLeft(defaultRealm, gnoPrefix)
+	}
+	return path
+}
+
+func setupSigner(io commands.IO, address string, chainID string) (gnoclient.Signer, error) {
+	home := gnoenv.HomeDir()
+	
+	var kb keys.Keybase
+	if address != "" {
+		var err error
+		kb, err = keys.NewKeyBaseFromDir(home)
+		if err != nil {
+			return nil, fmt.Errorf("unable to load keybase: %w", err)
+		}
+	} else {
+		// create an in-memory keybase
+		kb = keys.NewInMemory()
+		kb.CreateAccount(integration.DefaultAccount_Name, integration.DefaultAccount_Seed, "", "", 0, 0)
+		address = integration.DefaultAccount_Name
+	}
+
+	return getSignerForAccount(io, address, kb, chainID)
+}
+
+func runBrowser(ctx context.Context, gnocl *gnoclient.Client, cfg commonCfg, bcfg browser.Config, io commands.IO, isDev bool) error {
+	if cfg.sshListener != "" {
+		return runServer(ctx, gnocl, cfg, bcfg, io)
+	}
+
+	if cfg.banner && !isDev {
+		bcfg.Banner = NewGnoLandBanner()
+	}
+
+	return runTUI(ctx, gnocl, bcfg, io)
+}
+
+func runBrowserWithDev(ctx context.Context, gnocl *gnoclient.Client, cfg commonCfg, bcfg browser.Config, wsEndpoint string, io commands.IO) error {
+	if cfg.sshListener != "" {
+		// SSH server mode doesn't support hot reload yet
+		io.ErrPrintfln("Warning: SSH server mode doesn't support hot reload events")
+		return runServer(ctx, gnocl, cfg, bcfg, io)
+	}
+
+	return runTUIWithDev(ctx, gnocl, bcfg, wsEndpoint, io)
+}
+
+func runTUI(ctx context.Context, gnocl *gnoclient.Client, bcfg browser.Config, io commands.IO) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
+	bcfg.Renderer = lipgloss.DefaultRenderer()
 	model := browser.New(bcfg, gnocl)
+	
 	p := tea.NewProgram(model,
 		tea.WithContext(ctx),
-		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
-		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
 	)
 
-	var errgs errgroup.Group
-	if cfg.local {
-		devpoint, err := getDevEndpoint(cfg)
-		if err != nil {
-			return fmt.Errorf("unable to parse dev endpoint: %w", err)
-		}
-
-		var devcl browser.DevClient
-		devcl.Handler = func(typ events.Type, data any) error {
-			switch typ {
-			case events.EvtReload, events.EvtReset, events.EvtTxResult:
-				p.Send(browser.RefreshRealm())
-			default:
-			}
-
-			return nil
-		}
-
-		errgs.Go(func() error {
-			defer cancel()
-
-			if err := devcl.Run(ctx, devpoint, nil); err != nil {
-				return fmt.Errorf("dev connection failed: %w", err)
-			}
-
-			return nil
-		})
-	}
-
-	errgs.Go(func() error {
-		defer cancel()
-
-		_, err := p.Run()
-		return err
-	})
-
-	if err := errgs.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+	if _, err := p.Run(); err != nil {
 		return err
 	}
 
@@ -297,7 +396,66 @@ func runLocal(ctx context.Context, gnocl *gnoclient.Client, cfg *broCfg, bcfg br
 	return nil
 }
 
-func runServer(ctx context.Context, gnocl *gnoclient.Client, cfg *broCfg, bcfg browser.Config, io commands.IO) error {
+func runTUIWithDev(ctx context.Context, gnocl *gnoclient.Client, bcfg browser.Config, wsEndpoint string, io commands.IO) error {
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+
+	bcfg.Renderer = lipgloss.DefaultRenderer()
+	model := browser.New(bcfg, gnocl)
+	
+	p := tea.NewProgram(model,
+		tea.WithContext(ctx),
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
+
+	var eg errgroup.Group
+
+	// Parse WebSocket endpoint
+	devpoint, err := url.Parse(wsEndpoint)
+	if err != nil {
+		return fmt.Errorf("unable to parse dev endpoint: %w", err)
+	}
+	devpoint.Path = "_events"
+
+	// Setup WebSocket connection for events
+	var devcl browser.DevClient
+	devcl.Handler = func(typ events.Type, data any) error {
+		switch typ {
+		case events.EvtReload, events.EvtReset, events.EvtTxResult:
+			p.Send(browser.RefreshRealm())
+		default:
+			// TODO: Send event to sidebar when implemented
+		}
+		return nil
+	}
+
+	eg.Go(func() error {
+		defer cancel()
+		if err := devcl.Run(ctx, devpoint.String(), nil); err != nil {
+			return fmt.Errorf("dev connection failed: %w", err)
+		}
+		return nil
+	})
+
+	eg.Go(func() error {
+		defer cancel()
+		_, err := p.Run()
+		return err
+	})
+
+	if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		return err
+	}
+
+	io.Println("Bye!")
+	return nil
+}
+
+
+// Keep existing helper functions below...
+
+func runServer(ctx context.Context, gnocl *gnoclient.Client, cfg commonCfg, bcfg browser.Config, io commands.IO) error {
 	// setup logger
 	logger := newLogger(io.Out(), cfg.jsonlog)
 
@@ -384,66 +542,12 @@ func runServer(ctx context.Context, gnocl *gnoclient.Client, cfg *broCfg, bcfg b
 	return nil
 }
 
-func getDevEndpoint(cfg *broCfg) (string, error) {
-	// For --local, devRemote is already set with the right WebSocket URL
-	if cfg.local && strings.HasPrefix(cfg.devRemote, "ws://") {
-		devpoint, err := url.Parse(cfg.devRemote)
-		if err != nil {
-			return "", fmt.Errorf("unable to parse dev endpoint: %w", err)
-		}
-		devpoint.Path = "_events"
-		return devpoint.String(), nil
-	}
-
-	// Legacy logic for backward compatibility
-	var err error
-
-	// use remote address as default
-	host, port := cfg.remote, "8888"
-	if cfg.devRemote != "" {
-		// if any dev endpoint as been set, fallback on this
-		host, port, err = net.SplitHostPort(cfg.devRemote)
-		if err != nil {
-			return "", fmt.Errorf("unable to parse dev endpoint: %w", err)
-		}
-	}
-
-	// ensure having a (any) protocol scheme
-	if !strings.Contains(host, "://") {
-		host = "http://" + host
-	}
-
-	// parse full host including port
-	devpoint, err := url.Parse(host)
-	if err != nil {
-		return "", fmt.Errorf("unable to construct devaddr: %w", err)
-	}
-
-	host, _, _ = net.SplitHostPort(devpoint.Host)
-	if port != "" {
-		devpoint.Host = host + ":" + port
-	} else {
-		devpoint.Host = host
-	}
-
-	switch devpoint.Scheme {
-	case "ws", "wss": // already good
-	case "https":
-		devpoint.Scheme = "wss"
-	default:
-		devpoint.Scheme = "ws"
-	}
-	devpoint.Path = "_events"
-
-	return devpoint.String(), nil
-}
-
-func getSignerForAccount(io commands.IO, address string, kb keys.Keybase, cfg *broCfg) (gnoclient.Signer, error) {
+func getSignerForAccount(io commands.IO, address string, kb keys.Keybase, chainID string) (gnoclient.Signer, error) {
 	var signer gnoclient.SignerFromKeybase
 
 	signer.Keybase = kb
 	signer.Account = address
-	signer.ChainID = cfg.chainID
+	signer.ChainID = chainID
 
 	if ok, err := kb.HasByNameOrAddress(address); !ok || err != nil {
 		if err != nil {
@@ -536,19 +640,4 @@ func newLogger(out io.Writer, json bool) *slog.Logger {
 	charmlogger := charmlog.New(out)
 	charmlogger.SetLevel(charmlog.DebugLevel)
 	return slog.New(charmlogger)
-}
-
-func checkGnodevRunning(remote string) error {
-	// Try to connect to the gnodev RPC endpoint
-	cl, err := client.NewHTTPClient(remote)
-	if err != nil {
-		return err
-	}
-	
-	// Try a simple RPC call to check if gnodev is responsive
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	
-	_, err = cl.Status(ctx)
-	return err
 }
