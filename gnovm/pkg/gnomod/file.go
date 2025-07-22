@@ -40,6 +40,10 @@ type File struct {
 	// It is filled by the vmkeeper when a module is added.
 	// It is not intended to be used offchain.
 	UploadMetadata UploadMetadata `toml:"upload_metadata,omitempty" json:"upload_metadata,omitempty"`
+
+	// Royalties: address -> weight mapping for tool developers and beneficiaries
+	// Weights are relative (e.g., alice=60, bob=40 means alice gets 60% and bob gets 40%)
+	Royalties map[string]int `toml:"royalties,omitempty" json:"royalties,omitempty"`
 }
 
 type UploadMetadata struct {
@@ -110,6 +114,11 @@ func (f *File) Validate() error {
 		return fmt.Errorf("invalid gnomod.toml: %w", err)
 	}
 
+	// validate sponsorship configuration
+	if err := f.ValidateRoyalties(); err != nil {
+		return fmt.Errorf("invalid sponsorship configuration: %w", err)
+	}
+
 	return nil
 }
 
@@ -162,4 +171,68 @@ func (f *File) Sanitize() {
 // HasReplaces returns true if the module has any replace directives.
 func (f *File) HasReplaces() bool {
 	return len(f.Replace) > 0
+}
+
+// ValidateRoyalties ensures royalty configuration is valid.
+func (f *File) ValidateRoyalties() error {
+	if len(f.Royalties) == 0 {
+		return nil
+	}
+
+	// Validate weights are positive
+	for addr, weight := range f.Royalties {
+		if weight <= 0 {
+			return fmt.Errorf("royalty weight for %s must be positive, got %d", addr, weight)
+		}
+	}
+
+	return nil
+}
+
+// GetRoyaltyShares converts weights to percentages.
+// Returns nil if no royalties are defined.
+func (f *File) GetRoyaltyShares() map[string]int {
+	if len(f.Royalties) == 0 {
+		return nil
+	}
+
+	// Calculate total weight
+	totalWeight := 0
+	for _, weight := range f.Royalties {
+		totalWeight += weight
+	}
+
+	// Convert weights to percentages
+	shares := make(map[string]int)
+	allocated := 0
+	
+	// Process all entries
+	for addr, weight := range f.Royalties {
+		share := (weight * 100) / totalWeight
+		shares[addr] = share
+		allocated += share
+	}
+	
+	// If there's a remainder due to rounding, add it to the largest weight holder
+	if allocated < 100 {
+		remainder := 100 - allocated
+		maxAddr := ""
+		maxWeight := 0
+		for addr, weight := range f.Royalties {
+			if weight > maxWeight {
+				maxWeight = weight
+				maxAddr = addr
+			}
+		}
+		if maxAddr != "" {
+			shares[maxAddr] += remainder
+		}
+	}
+
+	return shares
+}
+
+// HasRoyalties returns true if the module has any royalties defined.
+func (f *File) HasRoyalties() bool {
+	return len(f.Royalties) > 0
 }

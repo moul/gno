@@ -228,6 +228,42 @@ func TestFile_Validate(t *testing.T) {
 			}(),
 			expectedErr: "malformed import path",
 		},
+		{
+			name: "valid royalties",
+			file: func() *File {
+				f := &File{}
+				f.Module = "gno.land/p/demo/foo"
+				f.Royalties = map[string]int{
+					"alice": 60,
+					"bob":   40,
+				}
+				return f
+			}(),
+		},
+		{
+			name: "invalid royalty weight",
+			file: func() *File {
+				f := &File{}
+				f.Module = "gno.land/p/demo/foo"
+				f.Royalties = map[string]int{
+					"alice": 0,
+				}
+				return f
+			}(),
+			expectedErr: "must be positive",
+		},
+		{
+			name: "negative royalty weight",
+			file: func() *File {
+				f := &File{}
+				f.Module = "gno.land/p/demo/foo"
+				f.Royalties = map[string]int{
+					"alice": -10,
+				}
+				return f
+			}(),
+			expectedErr: "must be positive",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -394,6 +430,124 @@ func TestFile_Sanitize(t *testing.T) {
 			tc.file.Sanitize()
 			assert.Equal(t, tc.expected.Gno, tc.file.Gno)
 			assert.Equal(t, tc.expected.Replace, tc.file.Replace)
+		})
+	}
+}
+
+func TestFile_GetRoyaltyShares(t *testing.T) {
+	testCases := []struct {
+		name     string
+		file     *File
+		expected map[string]int
+	}{
+		{
+			name:     "no royalties",
+			file:     &File{},
+			expected: nil,
+		},
+		{
+			name: "single royalty",
+			file: func() *File {
+				f := &File{}
+				f.Royalties = map[string]int{"alice": 1}
+				return f
+			}(),
+			expected: map[string]int{"alice": 100},
+		},
+		{
+			name: "two royalties equal weight",
+			file: func() *File {
+				f := &File{}
+				f.Royalties = map[string]int{"alice": 1, "bob": 1}
+				return f
+			}(),
+			expected: map[string]int{"alice": 50, "bob": 50},
+		},
+		{
+			name: "three royalties equal weight",
+			file: func() *File {
+				f := &File{}
+				f.Royalties = map[string]int{"alice": 1, "bob": 1, "charlie": 1}
+				return f
+			}(),
+			expected: nil, // Will check sum equals 100 instead
+		},
+		{
+			name: "royalties different weights",
+			file: func() *File {
+				f := &File{}
+				f.Royalties = map[string]int{
+					"alice":   60,
+					"bob":     30,
+					"charlie": 10,
+				}
+				return f
+			}(),
+			expected: map[string]int{"alice": 60, "bob": 30, "charlie": 10},
+		},
+		{
+			name: "royalties proportional weights",
+			file: func() *File {
+				f := &File{}
+				f.Royalties = map[string]int{
+					"alice": 3,
+					"bob":   2,
+				}
+				return f
+			}(),
+			expected: map[string]int{"alice": 60, "bob": 40},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			shares := tc.file.GetRoyaltyShares()
+			if tc.expected == nil {
+				// For the three equal weight case, just check sum is 100
+				if shares != nil {
+					sum := 0
+					for _, pct := range shares {
+						sum += pct
+					}
+					assert.Equal(t, 100, sum)
+					// Also check that values are reasonable
+					for _, pct := range shares {
+						assert.True(t, pct >= 33 && pct <= 34)
+					}
+				}
+			} else {
+				assert.Equal(t, tc.expected, shares)
+			}
+		})
+	}
+}
+
+func TestFile_HasRoyalties(t *testing.T) {
+	testCases := []struct {
+		name     string
+		file     *File
+		expected bool
+	}{
+		{
+			name:     "no royalties",
+			file:     &File{},
+			expected: false,
+		},
+		{
+			name: "has royalties",
+			file: func() *File {
+				f := &File{}
+				f.Royalties = map[string]int{"alice": 100}
+				return f
+			}(),
+			expected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			hasRoyalty := tc.file.HasRoyalties()
+			assert.Equal(t, tc.expected, hasRoyalty)
 		})
 	}
 }

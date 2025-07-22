@@ -93,6 +93,21 @@ func TestMarshalTomlHelper(t *testing.T) {
 			file:     &File{},
 			expected: "module = \"\"\ngno = \"\"\n",
 		},
+		{
+			name: "royalties with weights",
+			file: func() *File {
+				file := File{}
+				file.Module = "gno.land/p/demo/test"
+				file.Gno = "0.9"
+				file.Royalties = map[string]int{
+					"alice": 60,
+					"bob":   30,
+					"tooldev": 10,
+				}
+				return &file
+			}(),
+			expected: "module = \"gno.land/p/demo/test\"\ngno = \"0.9\"\n\n[royalties]\n  alice = 60\n  bob = 30\n  tooldev = 10\n",
+		},
 	}
 
 	for _, tc := range cases {
