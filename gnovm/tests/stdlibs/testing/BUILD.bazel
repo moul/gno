@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testing",
+    srcs = [
+        "context_testing.go",
+        "testing.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/tests/stdlibs/testing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//gnovm/stdlibs/std",
+        "//gnovm/tests/stdlibs/std",
+        "//tm2/pkg/crypto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testing",
+    visibility = ["//visibility:public"],
+)

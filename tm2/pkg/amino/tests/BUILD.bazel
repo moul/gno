@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["tests.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_library(
+    name = "tests",
+    srcs = [
+        "common.go",
+        "package.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/amino/tests",
+    visibility = ["//visibility:public"],
+    deps = ["//tm2/pkg/amino/pkg"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tests",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["main.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//github.com/gnolang/gno/tm2/pkg/amino/genproto/example/submodule:submodule_proto",
+        "//github.com/gnolang/gno/tm2/pkg/amino/genproto/example/submodule2:submodule2_proto",
+        "@com_google_protobuf//:any_proto",
+    ],
+)
+
+go_library(
+    name = "example_lib",
+    srcs = [
+        "main.go",
+        "package.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/amino/genproto/example",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/amino/genproto",
+        "//tm2/pkg/amino/genproto/example/submodule",
+        "//tm2/pkg/amino/genproto/example/submodule2",
+    ],
+)
+
+go_binary(
+    name = "example",
+    embed = [":example_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "stringutil",
+    srcs = ["snakecase.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/amino/genproto/stringutil",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stringutil",
+    visibility = ["//visibility:public"],
+)

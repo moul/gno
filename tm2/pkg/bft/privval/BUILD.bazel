@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "privval",
+    srcs = [
+        "doc.go",
+        "errors.go",
+        "file.go",
+        "messages.go",
+        "package.go",
+        "signer_client.go",
+        "signer_dialer_endpoint.go",
+        "signer_endpoint.go",
+        "signer_listener_endpoint.go",
+        "signer_requestHandler.go",
+        "signer_server.go",
+        "socket_dialers.go",
+        "socket_listeners.go",
+        "utils.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/privval",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/bft/types/time",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/os",
+        "//tm2/pkg/p2p/conn",
+        "//tm2/pkg/service",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":privval",
+    visibility = ["//visibility:public"],
+)

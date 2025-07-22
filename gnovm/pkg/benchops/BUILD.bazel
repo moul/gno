@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "benchops",
+    srcs = [
+        "bench.go",
+        "exporter.go",
+        "init.go",
+        "ops.go",
+        "ops_disabled.go",
+        "storage_disabled.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/benchops",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":benchops",
+    visibility = ["//visibility:public"],
+)

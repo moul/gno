@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "emitter",
+    srcs = ["server_emitter.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/internal/mock/emitter",
+    visibility = ["//contribs/gnodev:__subpackages__"],
+    deps = [
+        "//contribs/gnodev/pkg/emitter",
+        "//contribs/gnodev/pkg/events",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":emitter",
+    visibility = ["//contribs/gnodev:__subpackages__"],
+)

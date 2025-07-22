@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "transpiler",
+    srcs = ["transpiler.go"],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/transpiler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnoenv",
+        "//gnovm/pkg/gnolang",
+        "//gnovm/stdlibs",
+        "@org_golang_x_tools//go/ast/astutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":transpiler",
+    visibility = ["//visibility:public"],
+)

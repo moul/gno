@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["blockchain.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//github.com/gnolang/gno/tm2/pkg/bft/abci/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bft/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bitarray:bitarray_proto",
+        "//github.com/gnolang/gno/tm2/pkg/crypto/merkle:merkle_proto",
+    ],
+)
+
+go_library(
+    name = "blockchain",
+    srcs = [
+        "package.go",
+        "pool.go",
+        "reactor.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/blockchain",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/state",
+        "//tm2/pkg/bft/store",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/flow",
+        "//tm2/pkg/log",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/service",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":blockchain",
+    visibility = ["//visibility:public"],
+)

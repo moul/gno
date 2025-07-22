@@ -1,0 +1,86 @@
+# Example BUILD file patterns for Gno project
+
+# Example 1: Standard Go tests
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mypackage",
+    srcs = glob(["*.go"], exclude=["*_test.go"]),
+    importpath = "github.com/gnolang/gno/path/to/package",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mypackage_test",
+    srcs = glob(["*_test.go"]),
+    embed = [":mypackage"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+# Example 2: Gno package tests
+load("//misc/bazel/rules:gno_test.bzl", "gno_test")
+
+gno_test(
+    name = "gno_demo_test",
+    srcs = glob(["*_test.gno"]),
+    package_path = "./examples/gno.land/p/demo/avl",
+    data = glob(["*.gno"], exclude=["*_test.gno"]),
+    tags = ["gnotest"],
+    verbose = True,
+)
+
+# Example 3: Filetest suite
+load("//misc/bazel/rules:filetest.bzl", "filetest_suite")
+
+filetest_suite(
+    name = "vm_filetests",
+    srcs = glob(["*_filetest.gno"]),
+    tags = ["filetest"],
+)
+
+# Example 4: Txtar integration tests
+load("//misc/bazel/rules:txtar_test.bzl", "txtar_test_suite")
+
+txtar_test_suite(
+    name = "integration_tests",
+    srcs = glob(["*.txtar"]),
+    tags = ["txtar", "integration"],
+    size = "large",
+    timeout = "long",
+)
+
+# Example 5: Mixed test suite
+test_suite(
+    name = "all_tests",
+    tests = [
+        ":mypackage_test",
+        ":gno_demo_test",
+        ":vm_filetests",
+        ":integration_tests",
+    ],
+)
+
+# Example 6: Conditional tests based on platform
+go_test(
+    name = "platform_test",
+    srcs = select({
+        "//:linux": ["linux_test.go"],
+        "//:darwin": ["darwin_test.go"],
+        "//:windows": ["windows_test.go"],
+        "//conditions:default": ["default_test.go"],
+    }),
+    embed = [":mypackage"],
+)
+
+# Example 7: Test with custom timeout and size
+go_test(
+    name = "slow_test",
+    srcs = ["slow_test.go"],
+    embed = [":mypackage"],
+    size = "large",  # small, medium, large, enormous
+    timeout = "long",  # short, moderate, long, eternal
+    tags = ["manual"],  # Won't run with //... unless explicitly specified
+)

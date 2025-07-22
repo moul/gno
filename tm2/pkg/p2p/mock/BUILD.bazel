@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mock",
+    srcs = ["peer.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p/mock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/p2p/conn",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/service",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mock",
+    visibility = ["//visibility:public"],
+)

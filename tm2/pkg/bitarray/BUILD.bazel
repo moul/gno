@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["bitarray.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "bitarray",
+    srcs = [
+        "bit_array.go",
+        "package.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bitarray",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/random",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bitarray",
+    visibility = ["//visibility:public"],
+)

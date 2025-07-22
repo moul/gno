@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "internal.go",
+        "mem_batch.go",
+        "mem_iterator.go",
+        "test_common.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/db/internal",
+    visibility = ["//tm2/pkg/db:__subpackages__"],
+    deps = ["//tm2/pkg/db"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//tm2/pkg/db:__subpackages__"],
+)

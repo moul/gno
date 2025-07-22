@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "bech32",
+    srcs = glob(
+        ["*.go"],
+        exclude = ["*_test.go"],
+    ),
+    importpath = "github.com/gnolang/gno/tm2/pkg/bech32",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/errors",
+        "@com_github_btcsuite_btcd_btcutil//bech32",
+    ],
+)
+
+go_test(
+    name = "bech32_test",
+    srcs = glob(["*_test.go"]),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bech32",
+    visibility = ["//visibility:public"],
+)

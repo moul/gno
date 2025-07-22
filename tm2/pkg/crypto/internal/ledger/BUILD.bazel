@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ledger",
+    srcs = ["discover.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/internal/ledger",
+    visibility = ["//tm2/pkg/crypto:__subpackages__"],
+    deps = [
+        "//tm2/pkg/crypto/secp256k1",
+        "@com_github_btcsuite_btcd_btcec_v2//:btcec",
+        "@com_github_cosmos_ledger_cosmos_go//:ledger-cosmos-go",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ledger",
+    visibility = ["//tm2/pkg/crypto:__subpackages__"],
+)

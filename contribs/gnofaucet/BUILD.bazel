@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gnofaucet_lib",
+    srcs = [
+        "captcha.go",
+        "cooldown.go",
+        "gh.go",
+        "github.go",
+        "main.go",
+        "middleware.go",
+        "serve.go",
+        "throttle.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnofaucet",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//gno.land/pkg/log",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/std",
+        "@com_github_gnolang_faucet//:go_default_library",
+        "@com_github_gnolang_faucet//client/http:go_default_library",
+        "@com_github_gnolang_faucet//config:go_default_library",
+        "@com_github_gnolang_faucet//estimate/static:go_default_library",
+        "@com_github_gnolang_faucet//spec:go_default_library",
+        "@com_github_google_go_github_v64//github:go_default_library",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_redis_go_redis_v9//:go_default_library",
+        "@org_golang_x_time//rate:go_default_library",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_binary(
+    name = "gnofaucet",
+    embed = [":gnofaucet_lib"],
+    visibility = ["//visibility:public"],
+)

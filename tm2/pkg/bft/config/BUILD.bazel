@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = [
+        "config.go",
+        "toml.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/consensus/config",
+        "//tm2/pkg/bft/mempool/config",
+        "//tm2/pkg/bft/rpc/config",
+        "//tm2/pkg/bft/state/eventstore/types",
+        "//tm2/pkg/db",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/os",
+        "//tm2/pkg/p2p/config",
+        "//tm2/pkg/sdk/config",
+        "//tm2/pkg/telemetry/config",
+        "@cat_dario_mergo//:mergo",
+        "@com_github_pelletier_go_toml//:go-toml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//visibility:public"],
+)

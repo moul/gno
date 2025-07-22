@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gnobro_lib",
+    srcs = [
+        "banner.go",
+        "main.go",
+    ],
+    embedsrcs = [
+        "assets/gn_hc1.utf8ans",
+        "assets/gn_hc2.utf8ans",
+        "assets/gn_hc3.utf8ans",
+        "assets/gn_hc4.utf8ans",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/cmd/gnobro",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//contribs/gnodev/pkg/browser",
+        "//contribs/gnodev/pkg/events",
+        "//gno.land/pkg/gnoclient",
+        "//gno.land/pkg/integration",
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/crypto/keys",
+        "@com_github_charmbracelet_bubbletea//:go_default_library",
+        "@com_github_charmbracelet_lipgloss//:go_default_library",
+        "@com_github_charmbracelet_log//:go_default_library",
+        "@com_github_charmbracelet_ssh//:go_default_library",
+        "@com_github_charmbracelet_wish//:go_default_library",
+        "@com_github_charmbracelet_wish//activeterm:go_default_library",
+        "@com_github_charmbracelet_wish//bubbletea:go_default_library",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_binary(
+    name = "gnobro",
+    embed = [":gnobro_lib"],
+    visibility = ["//visibility:public"],
+)

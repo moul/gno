@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "markdown",
+    srcs = [
+        "context.go",
+        "ext.go",
+        "ext_alert.go",
+        "ext_columns.go",
+        "ext_forms.go",
+        "ext_imgvalidator.go",
+        "ext_links.go",
+        "golden.go",
+        "toc.go",
+        "utils.go",
+    ],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/gnoweb/markdown",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/gnoweb/weburl",
+        "@com_github_stretchr_testify//require",
+        "@com_github_yuin_goldmark//:goldmark",
+        "@com_github_yuin_goldmark//ast",
+        "@com_github_yuin_goldmark//parser",
+        "@com_github_yuin_goldmark//renderer",
+        "@com_github_yuin_goldmark//renderer/html",
+        "@com_github_yuin_goldmark//text",
+        "@com_github_yuin_goldmark//util",
+        "@org_golang_x_net//html",
+        "@org_golang_x_tools//txtar",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":markdown",
+    visibility = ["//visibility:public"],
+)

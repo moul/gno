@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "file",
+    srcs = ["file.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/state/eventstore/file",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/autofile",
+        "//tm2/pkg/bft/state/eventstore/types",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":file",
+    visibility = ["//visibility:public"],
+)

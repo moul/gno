@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gnohealth_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnohealth",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//contribs/gnohealth/internal/timestamp",
+        "//tm2/pkg/commands",
+    ],
+)
+
+go_binary(
+    name = "gnohealth",
+    embed = [":gnohealth_lib"],
+    visibility = ["//visibility:public"],
+)

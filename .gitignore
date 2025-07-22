@@ -42,3 +42,21 @@ wal/
 
 # Gnoweb frontend
 node_modules/
+
+# Bazel symlinks (created by misc/bazel/setup.sh)
+/WORKSPACE
+/BUILD.bazel
+/.bazelrc
+/.bazelignore
+/.bazelversion
+/deps.bzl
+/gno_deps.bzl
+/gno_test.bzl
+/filetest.bzl
+/txtar_test.bzl
+
+# Bazel output directories
+bazel-*
+
+# User-specific Bazel config
+.bazelrc.user

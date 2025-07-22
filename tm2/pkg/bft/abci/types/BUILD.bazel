@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["abci.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//github.com/gnolang/gno/tm2/pkg/crypto/merkle:merkle_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_library(
+    name = "types",
+    srcs = [
+        "application.go",
+        "mock_types.go",
+        "package.go",
+        "params.go",
+        "types.go",
+        "util.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/abci/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/merkle",
+        "//tm2/pkg/crypto/tmhash",
+        "//tm2/pkg/errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,43 @@
+# Build options
+build --incompatible_strict_action_env
+build --host_force_python=PY3
+build --action_env=GOCACHE
+build --action_env=GOPATH
+build --action_env=PATH
+
+# Disable bzlmod for now (use WORKSPACE)
+build --enable_bzlmod=false
+build --enable_workspace=true
+
+# Test options
+test --test_output=errors
+test --test_verbose_timeout_warnings
+
+# Go specific options
+build --@io_bazel_rules_go//go/config:race=false
+test --@io_bazel_rules_go//go/config:race=false
+
+# Remote caching preparation (disabled by default)
+build --remote_cache_compression
+
+# Local cache
+build --disk_cache=~/.cache/bazel-gno
+
+# Import remote cache configurations
+try-import %workspace%/misc/bazel/configs/remote-cache.bazelrc
+
+# GitHub Actions config
+build:ci --config=gha
+test:ci --test_output=all
+test:ci --flaky_test_attempts=2
+
+# Local development config
+build:local --spawn_strategy=standalone
+build:local --local_resources=cpu=HOST_CPUS*0.75
+build:local --local_resources=memory=HOST_RAM*0.75
+test:local --test_strategy=standalone
+test:local --test_output=streamed
+
+# Try to import user-specific .bazelrc
+# This should be .gitignored
+try-import %workspace%/.bazelrc.user

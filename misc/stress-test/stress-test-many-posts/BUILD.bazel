@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "stress-test-many-posts_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/gnolang/gno/misc/stress-test/stress-test-many-posts",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_connectrpc_connect//:go_default_library",
+        "@com_github_gnolang_gnonative_v4//api/gen/go:go_default_library",
+        "@com_github_gnolang_gnonative_v4//api/gen/go/_goconnect:go_default_library",
+        "@com_github_gnolang_gnonative_v4//service:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "stress-test-many-posts",
+    embed = [":stress-test-many-posts_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conditions",
+    srcs = [
+        "assignee.go",
+        "author.go",
+        "boolean.go",
+        "branch.go",
+        "condition.go",
+        "constant.go",
+        "draft.go",
+        "file.go",
+        "fork.go",
+        "label.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/github-bot/internal/conditions",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+    deps = [
+        "//contribs/github-bot/internal/client",
+        "//contribs/github-bot/internal/utils",
+        "@com_github_google_go_github_v64//github:go_default_library",
+        "@com_github_xlab_treeprint//:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":conditions",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+)

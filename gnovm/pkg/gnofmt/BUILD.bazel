@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gnofmt",
+    srcs = [
+        "package.go",
+        "processor.go",
+        "resolver.go",
+        "resolver_mock.go",
+        "utils.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/gnofmt",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnomod",
+        "@org_golang_x_tools//go/ast/astutil",
+        "@org_golang_x_tools//imports",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gnofmt",
+    visibility = ["//visibility:public"],
+)

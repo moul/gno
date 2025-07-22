@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "watcher",
+    srcs = ["watch.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/watcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/gnodev/pkg/emitter",
+        "//contribs/gnodev/pkg/events",
+        "//contribs/gnodev/pkg/packages",
+        "@com_github_fsnotify_fsnotify//:fsnotify",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":watcher",
+    visibility = ["//visibility:public"],
+)

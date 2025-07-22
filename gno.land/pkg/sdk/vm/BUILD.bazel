@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["vm.proto"],
+    visibility = ["//visibility:public"],
+    deps = ["//github.com/gnolang/gno/tm2/pkg/std:std_proto"],
+)
+
+go_library(
+    name = "vm",
+    srcs = [
+        "builtins.go",
+        "consts.go",
+        "convert.go",
+        "errors.go",
+        "genesis.go",
+        "handler.go",
+        "keeper.go",
+        "msgs.go",
+        "package.go",
+        "params.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/sdk/vm",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/gnoland/ugnot",
+        "//gnovm/pkg/doc",
+        "//gnovm/pkg/gnoenv",
+        "//gnovm/pkg/gnolang",
+        "//gnovm/pkg/gnomod",
+        "//gnovm/pkg/version",
+        "//gnovm/stdlibs",
+        "//gnovm/stdlibs/std",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/db/memdb",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/os",
+        "//tm2/pkg/overflow",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/sdk/params",
+        "//tm2/pkg/std",
+        "//tm2/pkg/store",
+        "//tm2/pkg/store/dbadapter",
+        "//tm2/pkg/store/types",
+        "//tm2/pkg/telemetry",
+        "//tm2/pkg/telemetry/metrics",
+        "@com_github_cockroachdb_apd_v3//:apd",
+        "@com_github_davecgh_go_spew//spew",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_metric//:metric",
+        "@org_uber_go_multierr//:multierr",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":vm",
+    visibility = ["//visibility:public"],
+)

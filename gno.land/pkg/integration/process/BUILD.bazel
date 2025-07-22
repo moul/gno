@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "process_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/integration/process",
+    visibility = ["//visibility:private"],
+    deps = ["//gno.land/pkg/integration"],
+)
+
+go_binary(
+    name = "process",
+    embed = [":process_lib"],
+    visibility = ["//visibility:public"],
+)

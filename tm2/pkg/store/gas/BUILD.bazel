@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gas",
+    srcs = ["store.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store/gas",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/overflow",
+        "//tm2/pkg/store/types",
+        "//tm2/pkg/store/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gas",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "messages",
+    srcs = [
+        "collector.go",
+        "subscription.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/libtm/messages",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_rs_xid//:go_default_library"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":messages",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "messages_test",
+    srcs = ["collector_test.go"],
+    embed = [":messages"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "weburl",
+    srcs = ["url.go"],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/gnoweb/weburl",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":weburl",
+    visibility = ["//visibility:public"],
+)

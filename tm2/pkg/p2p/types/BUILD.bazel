@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = [
+        "key.go",
+        "netaddress.go",
+        "node_info.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/os",
+        "//tm2/pkg/strings",
+        "//tm2/pkg/versionset",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

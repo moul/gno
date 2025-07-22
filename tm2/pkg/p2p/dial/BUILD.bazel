@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dial",
+    srcs = [
+        "dial.go",
+        "doc.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p/dial",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/p2p/types",
+        "@com_github_sig_0_iq//:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dial",
+    visibility = ["//visibility:public"],
+)

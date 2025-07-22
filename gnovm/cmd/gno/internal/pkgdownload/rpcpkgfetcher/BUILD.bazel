@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rpcpkgfetcher",
+    srcs = ["rpcpkgfetcher.go"],
+    importpath = "github.com/gnolang/gno/gnovm/cmd/gno/internal/pkgdownload/rpcpkgfetcher",
+    visibility = ["//gnovm/cmd/gno:__subpackages__"],
+    deps = [
+        "//gnovm/cmd/gno/internal/pkgdownload",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rpcpkgfetcher",
+    visibility = ["//gnovm/cmd/gno:__subpackages__"],
+)

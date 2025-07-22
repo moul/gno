@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "emitter",
+    srcs = [
+        "middleware.go",
+        "server.go",
+        "server_noop.go",
+    ],
+    embedsrcs = ["static/hotreload.js"],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/emitter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/gnodev/pkg/events",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":emitter",
+    visibility = ["//visibility:public"],
+)

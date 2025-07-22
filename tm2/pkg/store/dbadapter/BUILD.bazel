@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbadapter",
+    srcs = ["store.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store/dbadapter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/db",
+        "//tm2/pkg/store/cache",
+        "//tm2/pkg/store/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dbadapter",
+    visibility = ["//visibility:public"],
+)

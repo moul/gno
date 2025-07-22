@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "goscan_lib",
+    srcs = ["goscan.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/amino/cmd/goscan",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_davecgh_go_spew//spew"],
+)
+
+go_binary(
+    name = "goscan",
+    embed = [":goscan_lib"],
+    visibility = ["//visibility:public"],
+)

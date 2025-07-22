@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gnokeykc_lib",
+    srcs = [
+        "kc.go",
+        "main.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnokeykc",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//gno.land/pkg/keyscli",
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/crypto/keys/client",
+        "@com_github_zalando_go_keyring//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "gnokeykc",
+    embed = [":gnokeykc_lib"],
+    visibility = ["//visibility:public"],
+)

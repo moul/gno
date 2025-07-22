@@ -1,0 +1,51 @@
+# Remote caching configuration for Bazel
+# This file contains configs for different remote cache backends
+
+# BuildBuddy configuration (recommended)
+# Requires BUILDBUDDY_API_KEY environment variable
+build:buildbuddy --bes_backend=grpcs://remote.buildbuddy.io
+build:buildbuddy --bes_results_url=https://app.buildbuddy.io/invocation/
+build:buildbuddy --remote_cache=grpcs://remote.buildbuddy.io
+build:buildbuddy --remote_timeout=3600
+build:buildbuddy --remote_upload_local_results
+build:buildbuddy --remote_cache_compression
+build:buildbuddy --remote_download_minimal
+
+# BuildBuddy with authentication
+build:buildbuddy-auth --config=buildbuddy
+build:buildbuddy-auth --remote_header=x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}
+
+# Google Cloud Storage cache
+# Requires gcloud auth and GCS_CACHE_BUCKET environment variable
+build:gcs --remote_cache=https://storage.googleapis.com/${GCS_CACHE_BUCKET}
+build:gcs --remote_upload_local_results
+build:gcs --remote_timeout=3600
+build:gcs --google_default_credentials
+
+# S3 cache (AWS or compatible)
+# Requires AWS credentials and S3_CACHE_BUCKET environment variable
+build:s3 --remote_cache=s3://${S3_CACHE_BUCKET}/bazel-cache
+build:s3 --remote_upload_local_results
+build:s3 --remote_timeout=3600
+
+# GitHub Actions cache via BuildBuddy
+# Uses BuildBuddy with GitHub-specific settings
+build:gha --config=buildbuddy-auth
+build:gha --build_metadata=ROLE=CI
+build:gha --build_metadata=VISIBILITY=PUBLIC
+build:gha --remote_instance_name=projects/${GITHUB_REPOSITORY}
+build:gha --workspace_status_command="echo BUILD_USER ${GITHUB_ACTOR}"
+
+# Local development with optional remote cache
+# Falls back to local if remote is unavailable
+build:dev --remote_cache=grpcs://remote.buildbuddy.io
+build:dev --remote_upload_local_results=false
+build:dev --remote_timeout=10
+build:dev --remote_retries=1
+build:dev --remote_local_fallback
+
+# Read-only cache (for untrusted builds)
+build:readonly --remote_cache=grpcs://remote.buildbuddy.io
+build:readonly --remote_upload_local_results=false
+build:readonly --remote_accept_cached
+build:readonly --remote_timeout=10

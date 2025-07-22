@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "backup",
+    srcs = [
+        "backup.go",
+        "config.go",
+        "options.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/backup",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/tx-archive/backup/client",
+        "//contribs/tx-archive/backup/writer",
+        "//contribs/tx-archive/log",
+        "//contribs/tx-archive/log/noop",
+        "//gno.land/pkg/gnoland",
+        "//gno.land/pkg/sdk/vm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backup",
+    visibility = ["//visibility:public"],
+)

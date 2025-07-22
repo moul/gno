@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "github-bot_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/gnolang/gno/contribs/github-bot",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//contribs/github-bot/internal/check",
+        "//contribs/github-bot/internal/matrix",
+        "//tm2/pkg/commands",
+    ],
+)
+
+go_binary(
+    name = "github-bot",
+    embed = [":github-bot_lib"],
+    visibility = ["//visibility:public"],
+)

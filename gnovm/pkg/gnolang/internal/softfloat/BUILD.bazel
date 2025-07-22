@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "softfloat",
+    srcs = [
+        "runtime_softfloat64.go",
+        "softfloat.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/gnolang/internal/softfloat",
+    visibility = ["//gnovm/pkg/gnolang:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":softfloat",
+    visibility = ["//gnovm/pkg/gnolang:__subpackages__"],
+)

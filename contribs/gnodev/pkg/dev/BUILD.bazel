@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dev",
+    srcs = [
+        "node.go",
+        "node_state.go",
+        "query_path.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/dev",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/gnodev/pkg/address",
+        "//contribs/gnodev/pkg/emitter",
+        "//contribs/gnodev/pkg/events",
+        "//contribs/gnodev/pkg/packages",
+        "//gno.land/pkg/gnoland",
+        "//gno.land/pkg/gnoland/ugnot",
+        "//gno.land/pkg/integration",
+        "//gno.land/pkg/sdk/vm",
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/config",
+        "//tm2/pkg/bft/node",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/events",
+        "//tm2/pkg/log",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dev",
+    visibility = ["//visibility:public"],
+)

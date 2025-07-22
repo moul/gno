@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "packages",
+    srcs = [
+        "doc.go",
+        "filekind.go",
+        "imports.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/packages",
+    visibility = ["//visibility:public"],
+    deps = ["//tm2/pkg/std"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":packages",
+    visibility = ["//visibility:public"],
+)

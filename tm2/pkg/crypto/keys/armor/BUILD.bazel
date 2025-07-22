@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "armor",
+    srcs = [
+        "armor.go",
+        "armor_unsafe.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/keys/armor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/armor",
+        "//tm2/pkg/crypto/bcrypt",
+        "//tm2/pkg/crypto/keys/keyerror",
+        "//tm2/pkg/crypto/xsalsa20symmetric",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/os",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":armor",
+    visibility = ["//visibility:public"],
+)

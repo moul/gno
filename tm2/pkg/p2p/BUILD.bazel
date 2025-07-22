@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "p2p",
+    srcs = [
+        "base_reactor.go",
+        "peer.go",
+        "set.go",
+        "switch.go",
+        "switch_option.go",
+        "transport.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/cmap",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/p2p/config",
+        "//tm2/pkg/p2p/conn",
+        "//tm2/pkg/p2p/dial",
+        "//tm2/pkg/p2p/events",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/service",
+        "//tm2/pkg/telemetry",
+        "//tm2/pkg/telemetry/metrics",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":p2p",
+    visibility = ["//visibility:public"],
+)

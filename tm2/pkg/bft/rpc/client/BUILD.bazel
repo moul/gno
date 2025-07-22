@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = [
+        "batch.go",
+        "client.go",
+        "doc.go",
+        "local.go",
+        "options.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/rpc/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/rpc/core",
+        "//tm2/pkg/bft/rpc/core/types",
+        "//tm2/pkg/bft/rpc/lib/client",
+        "//tm2/pkg/bft/rpc/lib/client/batch",
+        "//tm2/pkg/bft/rpc/lib/client/http",
+        "//tm2/pkg/bft/rpc/lib/client/ws",
+        "//tm2/pkg/bft/rpc/lib/types",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/log",
+        "@com_github_rs_xid//:xid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":client",
+    visibility = ["//visibility:public"],
+)

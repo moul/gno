@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "benchops_lib",
+    srcs = [
+        "main.go",
+        "run.go",
+        "stats.go",
+        "store.go",
+        "tags_required.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/cmd/benchops",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//gnovm/pkg/benchops",
+        "//gnovm/pkg/gnoenv",
+        "//gnovm/pkg/gnolang",
+        "//gnovm/stdlibs",
+        "//tm2/pkg/bft/config",
+        "//tm2/pkg/db",
+        "//tm2/pkg/db/goleveldb",
+        "//tm2/pkg/os",
+        "//tm2/pkg/store",
+        "//tm2/pkg/store/dbadapter",
+        "//tm2/pkg/store/iavl",
+    ],
+)
+
+go_binary(
+    name = "benchops",
+    embed = [":benchops_lib"],
+    visibility = ["//visibility:public"],
+)

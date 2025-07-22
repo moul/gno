@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rootmulti",
+    srcs = [
+        "proof.go",
+        "store.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store/rootmulti",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/crypto/merkle",
+        "//tm2/pkg/crypto/tmhash",
+        "//tm2/pkg/db",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/iavl",
+        "//tm2/pkg/store/cachemulti",
+        "//tm2/pkg/store/errors",
+        "//tm2/pkg/store/immut",
+        "//tm2/pkg/store/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rootmulti",
+    visibility = ["//visibility:public"],
+)

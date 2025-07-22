@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gnomd_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnomd",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_michaelmure_go_term_markdown//:go_default_library"],
+)
+
+go_binary(
+    name = "gnomd",
+    embed = [":gnomd_lib"],
+    visibility = ["//visibility:public"],
+)

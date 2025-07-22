@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "exports.go",
+        "firstlast.go",
+        "store.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/db",
+        "//tm2/pkg/std",
+        "//tm2/pkg/store/rootmulti",
+        "//tm2/pkg/store/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//visibility:public"],
+)

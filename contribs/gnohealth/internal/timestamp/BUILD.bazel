@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "timestamp",
+    srcs = ["timestamp.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnohealth/internal/timestamp",
+    visibility = ["//contribs/gnohealth:__subpackages__"],
+    deps = [
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/commands",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":timestamp",
+    visibility = ["//contribs/gnohealth:__subpackages__"],
+)

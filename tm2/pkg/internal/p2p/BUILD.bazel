@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "p2p",
+    srcs = ["p2p.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/internal/p2p",
+    visibility = ["//tm2/pkg:__subpackages__"],
+    deps = [
+        "//tm2/pkg/log",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/config",
+        "//tm2/pkg/p2p/conn",
+        "//tm2/pkg/p2p/events",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/service",
+        "//tm2/pkg/versionset",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":p2p",
+    visibility = ["//tm2/pkg:__subpackages__"],
+)

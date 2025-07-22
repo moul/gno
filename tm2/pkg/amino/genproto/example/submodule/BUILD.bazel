@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["submodule.proto"],
+    visibility = ["//visibility:public"],
+    deps = ["//github.com/gnolang/gno/tm2/pkg/amino/genproto/example/submodule2:submodule2_proto"],
+)
+
+go_library(
+    name = "submodule",
+    srcs = [
+        "package.go",
+        "submodule.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/amino/genproto/example/submodule",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/amino/genproto/example/submodule2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":submodule",
+    visibility = ["//visibility:public"],
+)

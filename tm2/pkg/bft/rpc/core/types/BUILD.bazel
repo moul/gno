@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = ["responses.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/rpc/core/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/consensus/config",
+        "//tm2/pkg/bft/consensus/types",
+        "//tm2/pkg/bft/state",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

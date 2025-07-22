@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "discovery",
+    srcs = [
+        "discovery.go",
+        "doc.go",
+        "option.go",
+        "package.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p/discovery",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/conn",
+        "//tm2/pkg/p2p/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":discovery",
+    visibility = ["//visibility:public"],
+)

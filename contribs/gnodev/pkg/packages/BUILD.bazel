@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "packages",
+    srcs = [
+        "glob.go",
+        "loader.go",
+        "loader_base.go",
+        "loader_glob.go",
+        "package.go",
+        "resolver.go",
+        "resolver_local.go",
+        "resolver_mock.go",
+        "resolver_remote.go",
+        "resolver_root.go",
+        "utils.go",
+        "utils_other.go",
+        "utils_windows.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/packages",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/sdk/vm",
+        "//gnovm/pkg/gnolang",
+        "//gnovm/pkg/gnomod",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":packages",
+    visibility = ["//visibility:public"],
+)

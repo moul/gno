@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "genproto",
+    srcs = [
+        "bindings.go",
+        "camelcase.go",
+        "genproto.go",
+        "reflect.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/amino/genproto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/amino/genproto/stringutil",
+        "//tm2/pkg/amino/libs/press",
+        "//tm2/pkg/amino/pkg",
+        "@org_golang_google_protobuf//types/known/durationpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":genproto",
+    visibility = ["//visibility:public"],
+)

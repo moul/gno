@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "writer",
+    srcs = ["writer.go"],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/backup/writer",
+    visibility = ["//visibility:public"],
+    deps = ["//gno.land/pkg/gnoland"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":writer",
+    visibility = ["//visibility:public"],
+)

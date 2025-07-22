@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rpc",
+    srcs = ["rpc.go"],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/backup/client/rpc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/tx-archive/backup/client",
+        "//gno.land/pkg/sdk/vm",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/bft/rpc/core/types",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rpc",
+    visibility = ["//visibility:public"],
+)

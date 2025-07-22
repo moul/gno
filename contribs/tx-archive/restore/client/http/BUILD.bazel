@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "http",
+    srcs = ["http.go"],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/restore/client/http",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/sdk/vm",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":http",
+    visibility = ["//visibility:public"],
+)

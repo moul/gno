@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "repl",
+    srcs = ["repl.go"],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/repl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnoenv",
+        "//gnovm/pkg/gnolang",
+        "//gnovm/pkg/test",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":repl",
+    visibility = ["//visibility:public"],
+)

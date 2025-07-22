@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["ed25519.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "ed25519",
+    srcs = [
+        "ed25519.go",
+        "package.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/ed25519",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/tmhash",
+        "@org_golang_x_crypto//ed25519",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ed25519",
+    visibility = ["//visibility:public"],
+)

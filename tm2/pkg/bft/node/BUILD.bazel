@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "node",
+    srcs = [
+        "doc.go",
+        "id.go",
+        "node.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/node",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/appconn",
+        "//tm2/pkg/bft/blockchain",
+        "//tm2/pkg/bft/config",
+        "//tm2/pkg/bft/consensus",
+        "//tm2/pkg/bft/mempool",
+        "//tm2/pkg/bft/privval",
+        "//tm2/pkg/bft/proxy",
+        "//tm2/pkg/bft/rpc/core",
+        "//tm2/pkg/bft/rpc/core/types",
+        "//tm2/pkg/bft/rpc/lib/server",
+        "//tm2/pkg/bft/state",
+        "//tm2/pkg/bft/state/eventstore",
+        "//tm2/pkg/bft/state/eventstore/file",
+        "//tm2/pkg/bft/state/eventstore/null",
+        "//tm2/pkg/bft/store",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/bft/types/time",
+        "//tm2/pkg/bft/version",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/db",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/events",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/conn",
+        "//tm2/pkg/p2p/discovery",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/service",
+        "//tm2/pkg/versionset",
+        "@com_github_rs_cors//:cors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":node",
+    visibility = ["//visibility:public"],
+)

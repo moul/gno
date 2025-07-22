@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "restore",
+    srcs = [
+        "options.go",
+        "restore.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/restore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/tx-archive/log",
+        "//contribs/tx-archive/log/noop",
+        "//contribs/tx-archive/restore/client",
+        "//contribs/tx-archive/restore/source",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":restore",
+    visibility = ["//visibility:public"],
+)

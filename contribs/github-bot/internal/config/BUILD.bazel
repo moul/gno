@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = ["config.go"],
+    importpath = "github.com/gnolang/gno/contribs/github-bot/internal/config",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+    deps = [
+        "//contribs/github-bot/internal/client",
+        "//contribs/github-bot/internal/conditions",
+        "//contribs/github-bot/internal/requirements",
+        "//contribs/github-bot/internal/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+)

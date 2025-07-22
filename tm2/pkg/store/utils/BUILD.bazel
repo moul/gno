@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "utils",
+    srcs = ["print.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/colors",
+        "//tm2/pkg/store/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)

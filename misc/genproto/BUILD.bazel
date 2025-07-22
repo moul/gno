@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "genproto_lib",
+    srcs = ["genproto.go"],
+    importpath = "github.com/gnolang/gno/misc/genproto",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//gno.land/pkg/sdk/vm",
+        "//gnovm/pkg/gnolang",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/amino/genproto",
+        "//tm2/pkg/amino/tests",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/blockchain",
+        "//tm2/pkg/bft/consensus",
+        "//tm2/pkg/bft/consensus/types",
+        "//tm2/pkg/bft/mempool",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/bitarray",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/crypto/hd",
+        "//tm2/pkg/crypto/merkle",
+        "//tm2/pkg/crypto/multisig",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/sdk/bank",
+        "//tm2/pkg/std",
+    ],
+)
+
+go_binary(
+    name = "genproto",
+    embed = [":genproto_lib"],
+    visibility = ["//visibility:public"],
+)

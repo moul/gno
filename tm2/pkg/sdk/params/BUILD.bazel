@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "params",
+    srcs = [
+        "amino_helper.go",
+        "doc.go",
+        "handler.go",
+        "keeper.go",
+        "test_common.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/sdk/params",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/db/memdb",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/log",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/std",
+        "//tm2/pkg/store",
+        "//tm2/pkg/store/iavl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":params",
+    visibility = ["//visibility:public"],
+)

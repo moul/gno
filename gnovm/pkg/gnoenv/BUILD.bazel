@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gnoenv",
+    srcs = [
+        "gnohome.go",
+        "gnoroot.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/gnoenv",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gnoenv",
+    visibility = ["//visibility:public"],
+)

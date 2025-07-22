@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["cstypes.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//github.com/gnolang/gno/tm2/pkg/bft/abci/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bft/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bitarray:bitarray_proto",
+        "//github.com/gnolang/gno/tm2/pkg/crypto/merkle:merkle_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_library(
+    name = "types",
+    srcs = [
+        "events.go",
+        "height_vote_set.go",
+        "package.go",
+        "peer_round_state.go",
+        "round_state.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/consensus/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/bitarray",
+        "//tm2/pkg/p2p/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

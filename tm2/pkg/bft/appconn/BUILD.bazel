@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "appconn",
+    srcs = [
+        "app_conn.go",
+        "multi_app_conn.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/appconn",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/abci/client",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/service",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":appconn",
+    visibility = ["//visibility:public"],
+)

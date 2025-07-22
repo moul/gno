@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = ["client.go"],
+    importpath = "github.com/gnolang/gno/contribs/github-bot/internal/client",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+    deps = [
+        "//contribs/github-bot/internal/logger",
+        "//contribs/github-bot/internal/utils",
+        "@com_github_google_go_github_v64//github:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":client",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+)

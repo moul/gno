@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "modcolor_lib",
+    srcs = ["modcolor.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/colors/cmd/modcolor",
+    visibility = ["//visibility:private"],
+    deps = ["//tm2/pkg/colors"],
+)
+
+go_binary(
+    name = "modcolor",
+    embed = [":modcolor_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "goleveldb",
+    srcs = ["go_level_db.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/db/goleveldb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/colors",
+        "//tm2/pkg/db",
+        "//tm2/pkg/db/internal",
+        "@com_github_syndtr_goleveldb//leveldb",
+        "@com_github_syndtr_goleveldb//leveldb/errors",
+        "@com_github_syndtr_goleveldb//leveldb/iterator",
+        "@com_github_syndtr_goleveldb//leveldb/opt",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":goleveldb",
+    visibility = ["//visibility:public"],
+)

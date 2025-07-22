@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["multisig.proto"],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
+
+go_library(
+    name = "multisig",
+    srcs = [
+        "multisignature.go",
+        "package.go",
+        "threshold_pubkey.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/multisig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/multisig/bitarray",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":multisig",
+    visibility = ["//visibility:public"],
+)

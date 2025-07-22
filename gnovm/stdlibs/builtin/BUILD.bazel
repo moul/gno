@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "builtin",
+    srcs = ["shims.go"],
+    importpath = "github.com/gnolang/gno/gnovm/stdlibs/builtin",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":builtin",
+    visibility = ["//visibility:public"],
+)

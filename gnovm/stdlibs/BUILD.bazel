@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "stdlibs",
+    srcs = [
+        "generated.go",
+        "stdlibs.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/stdlibs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//gnovm/stdlibs/crypto/ed25519",
+        "//gnovm/stdlibs/crypto/sha256",
+        "//gnovm/stdlibs/math",
+        "//gnovm/stdlibs/runtime",
+        "//gnovm/stdlibs/std",
+        "//gnovm/stdlibs/sys/params",
+        "//gnovm/stdlibs/time",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stdlibs",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "os",
+    srcs = ["os.go"],
+    importpath = "github.com/gnolang/gno/gnovm/tests/stdlibs/os",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//gnovm/tests/stdlibs/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":os",
+    visibility = ["//visibility:public"],
+)

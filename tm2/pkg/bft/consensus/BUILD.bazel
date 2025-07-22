@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["consensus.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//github.com/gnolang/gno/tm2/pkg/bft/abci/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bft/consensus/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bft/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bitarray:bitarray_proto",
+        "//github.com/gnolang/gno/tm2/pkg/crypto/merkle:merkle_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+go_library(
+    name = "consensus",
+    srcs = [
+        "debug.go",
+        "package.go",
+        "reactor.go",
+        "replay.go",
+        "replay_file.go",
+        "state.go",
+        "ticker.go",
+        "wal_generator.go",
+        "wal_init.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/consensus",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/appconn",
+        "//tm2/pkg/bft/config",
+        "//tm2/pkg/bft/consensus/config",
+        "//tm2/pkg/bft/consensus/types",
+        "//tm2/pkg/bft/fail",
+        "//tm2/pkg/bft/mempool/mock",
+        "//tm2/pkg/bft/proxy",
+        "//tm2/pkg/bft/state",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/bft/types/time",
+        "//tm2/pkg/bft/wal",
+        "//tm2/pkg/bitarray",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/db",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/events",
+        "//tm2/pkg/log",
+        "//tm2/pkg/os",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/random",
+        "//tm2/pkg/service",
+        "//tm2/pkg/telemetry",
+        "//tm2/pkg/telemetry/metrics",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":consensus",
+    visibility = ["//visibility:public"],
+)

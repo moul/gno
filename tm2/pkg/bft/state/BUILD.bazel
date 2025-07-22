@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "state",
+    srcs = [
+        "errors.go",
+        "execution.go",
+        "services.go",
+        "state.go",
+        "store.go",
+        "tx_filter.go",
+        "validation.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/state",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/appconn",
+        "//tm2/pkg/bft/fail",
+        "//tm2/pkg/bft/mempool",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/bft/types/time",
+        "//tm2/pkg/bft/types/version",
+        "//tm2/pkg/bft/version",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/db",
+        "//tm2/pkg/events",
+        "//tm2/pkg/os",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":state",
+    visibility = ["//visibility:public"],
+)

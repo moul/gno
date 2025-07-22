@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "secp256k1",
+    srcs = [
+        "package.go",
+        "secp256k1.go",
+        "secp256k1_nocgo.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/secp256k1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "@com_github_btcsuite_btcd_btcec_v2//:btcec",
+        "@com_github_btcsuite_btcd_btcec_v2//ecdsa",
+        "@com_github_decred_dcrd_dcrec_secp256k1_v4//:secp256k1",
+        "@org_golang_x_crypto//ripemd160",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":secp256k1",
+    visibility = ["//visibility:public"],
+)

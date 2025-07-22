@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "core",
+    srcs = [
+        "abci.go",
+        "blocks.go",
+        "consensus.go",
+        "dev.go",
+        "doc.go",
+        "health.go",
+        "mempool.go",
+        "net.go",
+        "pipe.go",
+        "routes.go",
+        "status.go",
+        "tx.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/rpc/core",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/appconn",
+        "//tm2/pkg/bft/consensus/config",
+        "//tm2/pkg/bft/consensus/types",
+        "//tm2/pkg/bft/mempool",
+        "//tm2/pkg/bft/rpc/config",
+        "//tm2/pkg/bft/rpc/core/types",
+        "//tm2/pkg/bft/rpc/lib/server",
+        "//tm2/pkg/bft/rpc/lib/types",
+        "//tm2/pkg/bft/state",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/db",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/events",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/random",
+        "//tm2/pkg/service",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":core",
+    visibility = ["//visibility:public"],
+)

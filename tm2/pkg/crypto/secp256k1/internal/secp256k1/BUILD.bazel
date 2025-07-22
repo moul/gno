@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "secp256k1",
+    srcs = [
+        "curve.go",
+        "ext.h",
+        "panic_cb.go",
+        "secp256.go",
+    ],
+    cgo = True,
+    copts = [
+        "-Itm2/pkg/crypto/secp256k1/internal/secp256k1/libsecp256k1",
+        "-Itm2/pkg/crypto/secp256k1/internal/secp256k1/libsecp256k1/src",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/secp256k1/internal/secp256k1",
+    visibility = ["//tm2/pkg/crypto/secp256k1:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":secp256k1",
+    visibility = ["//tm2/pkg/crypto/secp256k1:__subpackages__"],
+)

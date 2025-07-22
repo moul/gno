@@ -1,0 +1,13 @@
+# Rules for Gno-specific build and test actions
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(
+    [
+        "gno_deps.bzl",
+        "gno_test.bzl",
+        "filetest.bzl",
+        "txtar_test.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

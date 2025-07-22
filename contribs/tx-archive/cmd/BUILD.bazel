@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "cmd_lib",
+    srcs = [
+        "backup.go",
+        "logger.go",
+        "main.go",
+        "restore.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/cmd",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//contribs/tx-archive/backup",
+        "//contribs/tx-archive/backup/client/rpc",
+        "//contribs/tx-archive/backup/writer",
+        "//contribs/tx-archive/backup/writer/legacy",
+        "//contribs/tx-archive/backup/writer/standard",
+        "//contribs/tx-archive/restore",
+        "//contribs/tx-archive/restore/client/http",
+        "//contribs/tx-archive/restore/source",
+        "//contribs/tx-archive/restore/source/legacy",
+        "//contribs/tx-archive/restore/source/standard",
+        "@com_github_peterbourgon_ff_v3//ffcli",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_binary(
+    name = "cmd",
+    embed = [":cmd_lib"],
+    visibility = ["//visibility:public"],
+)

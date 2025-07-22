@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "iavl",
+    srcs = [
+        "store.go",
+        "tree.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store/iavl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/crypto/merkle",
+        "//tm2/pkg/db",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/iavl",
+        "//tm2/pkg/std",
+        "//tm2/pkg/store/cache",
+        "//tm2/pkg/store/errors",
+        "//tm2/pkg/store/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":iavl",
+    visibility = ["//visibility:public"],
+)

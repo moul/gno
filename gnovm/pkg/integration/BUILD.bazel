@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "integration",
+    srcs = [
+        "testscript.go",
+        "testscript_coverage.go",
+        "testscript_gno.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/integration",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/os",
+        "@com_github_rogpeppe_go_internal//testscript",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":integration",
+    visibility = ["//visibility:public"],
+)

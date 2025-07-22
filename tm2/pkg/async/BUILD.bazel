@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "async",
+    srcs = ["async.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/async",
+    visibility = ["//visibility:public"],
+    deps = ["//tm2/pkg/errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":async",
+    visibility = ["//visibility:public"],
+)

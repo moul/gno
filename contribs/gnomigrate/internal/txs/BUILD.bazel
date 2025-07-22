@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "txs",
+    srcs = ["txs.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnomigrate/internal/txs",
+    visibility = ["//contribs/gnomigrate:__subpackages__"],
+    deps = [
+        "//gno.land/pkg/gnoland",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":txs",
+    visibility = ["//contribs/gnomigrate:__subpackages__"],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tools",
+    srcs = ["tools.go"],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/gnoweb/tools",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_cespare_reflex//:go_default_library"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tools",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "events",
+    srcs = [
+        "doc.go",
+        "events.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p/events",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/p2p/types",
+        "@com_github_rs_xid//:xid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":events",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "browser",
+    srcs = [
+        "client_dev.go",
+        "client_node.go",
+        "list_model.go",
+        "model.go",
+        "model_banner.go",
+        "model_nav.go",
+        "model_style.go",
+        "model_tasks.go",
+        "model_view.go",
+        "utils.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/browser",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/gnodev/pkg/emitter",
+        "//contribs/gnodev/pkg/events",
+        "//gno.land/pkg/gnoclient",
+        "//gno.land/pkg/gnoweb",
+        "//gno.land/pkg/sdk/vm",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/log",
+        "@com_github_charmbracelet_bubbles//list:go_default_library",
+        "@com_github_charmbracelet_bubbles//textinput:go_default_library",
+        "@com_github_charmbracelet_bubbles//viewport:go_default_library",
+        "@com_github_charmbracelet_bubbletea//:go_default_library",
+        "@com_github_charmbracelet_glamour//:go_default_library",
+        "@com_github_charmbracelet_glamour//ansi:go_default_library",
+        "@com_github_charmbracelet_lipgloss//:go_default_library",
+        "@com_github_gorilla_websocket//:websocket",
+        "@com_github_lrstanley_bubblezone//:go_default_library",
+        "@com_github_muesli_reflow//wordwrap:go_default_library",
+        "@com_github_sahilm_fuzzy//:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":browser",
+    visibility = ["//visibility:public"],
+)

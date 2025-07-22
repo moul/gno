@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "proxy",
+    srcs = ["path_interceptor.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/proxy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/sdk/vm",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/rpc/lib/types",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proxy",
+    visibility = ["//visibility:public"],
+)

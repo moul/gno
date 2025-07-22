@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "keys",
+    srcs = [
+        "keybase.go",
+        "keys.go",
+        "lazy_keybase.go",
+        "package.go",
+        "types.go",
+        "utils.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/keys",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/bip39",
+        "//tm2/pkg/crypto/hd",
+        "//tm2/pkg/crypto/keys/armor",
+        "//tm2/pkg/crypto/keys/keyerror",
+        "//tm2/pkg/crypto/ledger",
+        "//tm2/pkg/crypto/multisig",
+        "//tm2/pkg/crypto/secp256k1",
+        "//tm2/pkg/db",
+        "//tm2/pkg/db/goleveldb",
+        "//tm2/pkg/db/memdb",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/os",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":keys",
+    visibility = ["//visibility:public"],
+)

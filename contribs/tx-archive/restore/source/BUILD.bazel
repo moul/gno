@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "source",
+    srcs = ["source.go"],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/restore/source",
+    visibility = ["//visibility:public"],
+    deps = ["//tm2/pkg/std"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":source",
+    visibility = ["//visibility:public"],
+)

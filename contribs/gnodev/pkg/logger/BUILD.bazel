@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "logger",
+    srcs = [
+        "colors.go",
+        "log_column.go",
+        "log_zap.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/logger",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/log",
+        "@com_github_charmbracelet_lipgloss//:go_default_library",
+        "@com_github_charmbracelet_log//:go_default_library",
+        "@com_github_muesli_termenv//:go_default_library",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":logger",
+    visibility = ["//visibility:public"],
+)

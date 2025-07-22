@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "iaviewer_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/iavl/cmd/iaviewer",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//tm2/pkg/db",
+        "//tm2/pkg/db/goleveldb",
+        "//tm2/pkg/iavl",
+    ],
+)
+
+go_binary(
+    name = "iaviewer",
+    embed = [":iaviewer_lib"],
+    visibility = ["//visibility:public"],
+)

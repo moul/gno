@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "time",
+    srcs = [
+        "time.go",
+        "tzdata.go",
+        "zzipdata.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/stdlibs/time",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//gnovm/stdlibs/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":time",
+    visibility = ["//visibility:public"],
+)

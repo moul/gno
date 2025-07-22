@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test",
+    srcs = [
+        "errors.go",
+        "filetest.go",
+        "imports.go",
+        "test.go",
+        "util_match.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/test",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//gnovm/pkg/packages",
+        "//gnovm/stdlibs",
+        "//gnovm/tests/stdlibs",
+        "//gnovm/tests/stdlibs/std",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/db/memdb",
+        "//tm2/pkg/os",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/std",
+        "//tm2/pkg/store/dbadapter",
+        "//tm2/pkg/store/types",
+        "@com_github_pmezard_go_difflib//difflib",
+        "@org_uber_go_multierr//:multierr",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test",
+    visibility = ["//visibility:public"],
+)

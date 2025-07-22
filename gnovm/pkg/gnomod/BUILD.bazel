@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gnomod",
+    srcs = [
+        "deprecated_dotmod.go",
+        "file.go",
+        "fsutil.go",
+        "parse.go",
+        "toml.go",
+        "xxx_pkg.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/gnomod",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/std",
+        "@com_github_pelletier_go_toml//:go-toml",
+        "@org_golang_x_mod//modfile",
+        "@org_golang_x_mod//module",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gnomod",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "simple_test",
+    size = "small",
+    srcs = ["simple_test.go"],
+)
+
+go_test(
+    name = "simple_crypto_test",
+    size = "small",
+    srcs = ["simple_crypto_test.go"],
+    deps = [
+        "//tm2/pkg/crypto",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

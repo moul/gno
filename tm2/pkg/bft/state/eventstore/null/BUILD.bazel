@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "null",
+    srcs = ["null.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/state/eventstore/null",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/state/eventstore",
+        "//tm2/pkg/bft/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":null",
+    visibility = ["//visibility:public"],
+)

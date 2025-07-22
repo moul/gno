@@ -1,0 +1,64 @@
+workspace(name = "com_github_gnolang_gno")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# rules_go for Go support
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "f4a9314518ca6acfa16cc4ab43b0b8ce1e4ea64b81c38d8a3772883f153346b8",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+    ],
+)
+
+# gazelle for BUILD file generation
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "b760f7fe75173886007f7c2e616a21241208f3d90e8657dc65d36a771e916b6a",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.39.1/bazel-gazelle-v0.39.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.39.1/bazel-gazelle-v0.39.1.tar.gz",
+    ],
+)
+
+# protobuf rules (dependency for many Go projects)
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "930c2c3b5ecc6c9c12615cf5ad93f1cd6e12d0aba862b572e076259970ac3a53",
+    strip_prefix = "protobuf-3.21.12",
+    urls = [
+        "https://github.com/protocolbuffers/protobuf/archive/v3.21.12.tar.gz",
+    ],
+)
+
+# skylib for common Bazel functions
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "bc283cdfcd526a52c3201279cda4bc298652efa898b10b4db0837dc51652756f",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
+    ],
+)
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+# Initialize dependencies
+bazel_skylib_workspace()
+go_rules_dependencies()
+go_register_toolchains(version = "1.23.4")
+gazelle_dependencies()
+protobuf_deps()
+
+# Load custom Gno rules
+load("//:gno_deps.bzl", "gno_dependencies")
+gno_dependencies()
+
+# Load Go dependencies from go.mod
+load("//:deps.bzl", "go_dependencies")
+# gazelle:repository_macro deps.bzl%go_dependencies
+go_dependencies()

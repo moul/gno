@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = [
+        "gas.go",
+        "options.go",
+        "store.go",
+        "utils.go",
+        "validity.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/store/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/db",
+        "//tm2/pkg/overflow",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

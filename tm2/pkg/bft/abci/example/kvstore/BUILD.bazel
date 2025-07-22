@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kvstore",
+    srcs = [
+        "helpers.go",
+        "kvstore.go",
+        "persistent_kvstore.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/abci/example/kvstore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/example/errors",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/abci/version",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/db",
+        "//tm2/pkg/db/goleveldb",
+        "//tm2/pkg/db/memdb",
+        "//tm2/pkg/log",
+        "//tm2/pkg/random",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kvstore",
+    visibility = ["//visibility:public"],
+)

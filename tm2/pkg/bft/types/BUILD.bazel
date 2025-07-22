@@ -1,0 +1,69 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["types.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//github.com/gnolang/gno/tm2/pkg/bft/abci/types:types_proto",
+        "//github.com/gnolang/gno/tm2/pkg/bitarray:bitarray_proto",
+        "//github.com/gnolang/gno/tm2/pkg/crypto/merkle:merkle_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_library(
+    name = "types",
+    srcs = [
+        "block.go",
+        "block_meta.go",
+        "canonical.go",
+        "encoding_helper.go",
+        "errors.go",
+        "events.go",
+        "evidence.go",
+        "fingerprint.go",
+        "genesis.go",
+        "keys.go",
+        "package.go",
+        "params.go",
+        "part_set.go",
+        "priv_validator.go",
+        "proposal.go",
+        "results.go",
+        "signable.go",
+        "signed_msg_type.go",
+        "test_util.go",
+        "tx.go",
+        "validation.go",
+        "validator.go",
+        "validator_set.go",
+        "vote.go",
+        "vote_set.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/types/time",
+        "//tm2/pkg/bft/types/version",
+        "//tm2/pkg/bitarray",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/crypto/merkle",
+        "//tm2/pkg/crypto/tmhash",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/events",
+        "//tm2/pkg/os",
+        "//tm2/pkg/random",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bitarray",
+    srcs = ["compact_bit_array.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/multisig/bitarray",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bitarray",
+    visibility = ["//visibility:public"],
+)

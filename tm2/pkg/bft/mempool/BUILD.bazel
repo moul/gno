@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["mempool.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "mempool",
+    srcs = [
+        "clist_mempool.go",
+        "doc.go",
+        "errors.go",
+        "mempool.go",
+        "package.go",
+        "reactor.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/mempool",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/autofile",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/appconn",
+        "//tm2/pkg/bft/mempool/config",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/clist",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/log",
+        "//tm2/pkg/os",
+        "//tm2/pkg/p2p",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/telemetry",
+        "//tm2/pkg/telemetry/metrics",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mempool",
+    visibility = ["//visibility:public"],
+)

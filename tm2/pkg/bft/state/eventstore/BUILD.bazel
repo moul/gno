@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "eventstore",
+    srcs = [
+        "store.go",
+        "store_service.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/state/eventstore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/events",
+        "//tm2/pkg/service",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":eventstore",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,64 @@
+load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+# gazelle configuration
+# gazelle:prefix github.com/gnolang/gno
+# gazelle:go_generate_proto false
+# gazelle:exclude misc/bazel
+# gazelle:exclude vendor
+# gazelle:exclude bazel-*
+# gazelle:exclude contribs/gnogenesis
+# gazelle:exclude misc/genstd
+# gazelle:exclude tm2/pkg/libtm
+# gazelle:exclude **/*_test.go
+# gazelle:build_file_name BUILD.bazel
+# gazelle:go_naming_convention import_alias
+# gazelle:resolve go github.com/gnolang/libtm/messages @com_github_gnolang_libtm//messages
+# gazelle:resolve go github.com/sig-0/insertion-queue @com_github_sig_0_iq//:go_default_library
+
+gazelle(
+    name = "gazelle",
+    command = "update",
+    extra_args = [
+        "-build_file_name=BUILD.bazel",
+        "-go_naming_convention=import_alias",
+    ],
+)
+
+gazelle(
+    name = "gazelle-update-repos",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+)
+
+exports_files([
+    "go.mod",
+    "go.sum",
+])
+
+# Test suite for working tests
+test_suite(
+    name = "working_tests",
+    tests = [
+        "//test_working:simple_test",
+        "//tm2/pkg/crypto:crypto_test",
+        # Add more as they work
+    ],
+)
+
+go_library(
+    name = "gno",
+    srcs = ["doc.go"],
+    importpath = "github.com/gnolang/gno",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gno",
+    visibility = ["//visibility:public"],
+)

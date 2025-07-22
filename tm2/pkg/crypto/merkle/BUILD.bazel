@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["merkle.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "merkle",
+    srcs = [
+        "codec.go",
+        "doc.go",
+        "hash.go",
+        "package.go",
+        "proof.go",
+        "proof_key_path.go",
+        "proof_simple_value.go",
+        "simple_map.go",
+        "simple_proof.go",
+        "simple_tree.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/merkle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto/tmhash",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":merkle",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetry",
+    srcs = ["init.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/telemetry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/telemetry/config",
+        "//tm2/pkg/telemetry/metrics",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":telemetry",
+    visibility = ["//visibility:public"],
+)

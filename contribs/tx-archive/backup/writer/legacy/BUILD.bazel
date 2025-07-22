@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "legacy",
+    srcs = ["legacy.go"],
+    importpath = "github.com/gnolang/gno/contribs/tx-archive/backup/writer/legacy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/gnoland",
+        "//gno.land/pkg/sdk/vm",
+        "//tm2/pkg/amino",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":legacy",
+    visibility = ["//visibility:public"],
+)

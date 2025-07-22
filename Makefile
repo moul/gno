@@ -60,6 +60,18 @@ test.components:
 	$(MAKE) --no-print-directory -C examples test
 	$(MAKE) --no-print-directory -C misc     test
 
+########################################
+# Bazel integration
+.PHONY: bazel-test bazel-build bazel-generate bazel-clean
+bazel-test:
+	@$(MAKE) --no-print-directory -C misc/bazel test
+bazel-build:
+	@$(MAKE) --no-print-directory -C misc/bazel build
+bazel-generate:
+	@$(MAKE) --no-print-directory -C misc/bazel generate
+bazel-clean:
+	@$(MAKE) --no-print-directory -C misc/bazel clean
+
 .PHONY: fmt
 fmt:
 	$(MAKE) --no-print-directory -C tm2      fmt

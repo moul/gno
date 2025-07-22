@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "xsalsa20symmetric",
+    srcs = ["symmetric.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/xsalsa20symmetric",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/crypto",
+        "@org_golang_x_crypto//nacl/secretbox",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":xsalsa20symmetric",
+    visibility = ["//visibility:public"],
+)

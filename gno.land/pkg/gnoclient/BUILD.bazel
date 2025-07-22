@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gnoclient",
+    srcs = [
+        "client.go",
+        "client_queries.go",
+        "client_txs.go",
+        "signer.go",
+        "util.go",
+    ],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/gnoclient",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/gnoland/ugnot",
+        "//gno.land/pkg/sdk/vm",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/rpc/client",
+        "//tm2/pkg/bft/rpc/core/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/keys",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/sdk/bank",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gnoclient",
+    visibility = ["//visibility:public"],
+)

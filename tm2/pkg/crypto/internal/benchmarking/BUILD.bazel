@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "benchmarking",
+    srcs = ["bench.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/internal/benchmarking",
+    visibility = ["//tm2/pkg/crypto:__subpackages__"],
+    deps = ["//tm2/pkg/crypto"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":benchmarking",
+    visibility = ["//tm2/pkg/crypto:__subpackages__"],
+)

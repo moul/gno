@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+go_library(
+    name = "std",
+    srcs = glob(
+        ["*.go"],
+        exclude = ["*_test.go"],
+    ),
+    importpath = "github.com/gnolang/gno/tm2/pkg/std",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/crypto/mock",
+        "//tm2/pkg/crypto/multisig",
+        "//tm2/pkg/crypto/secp256k1",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/overflow",
+    ],
+)
+
+go_test(
+    name = "std_test",
+    srcs = glob(["*_test.go"]),
+)
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["std.proto"],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":std",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conn",
+    srcs = [
+        "conn.go",
+        "connection.go",
+        "package.go",
+        "secret_connection.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/p2p/conn",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/amino/pkg",
+        "//tm2/pkg/async",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/flow",
+        "//tm2/pkg/p2p/config",
+        "//tm2/pkg/service",
+        "//tm2/pkg/timer",
+        "@com_github_libp2p_go_buffer_pool//:go-buffer-pool",
+        "@org_golang_x_crypto//chacha20poly1305",
+        "@org_golang_x_crypto//curve25519",
+        "@org_golang_x_crypto//hkdf",
+        "@org_golang_x_crypto//nacl/box",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":conn",
+    visibility = ["//visibility:public"],
+)

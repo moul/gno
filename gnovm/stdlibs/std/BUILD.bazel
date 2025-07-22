@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "std",
+    srcs = [
+        "banker.go",
+        "context.go",
+        "crypto.go",
+        "emit_event.go",
+        "native.go",
+        "package.go",
+        "params.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/stdlibs/std",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":std",
+    visibility = ["//visibility:public"],
+)

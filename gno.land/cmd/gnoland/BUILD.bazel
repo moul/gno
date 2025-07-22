@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gnoland_lib",
+    srcs = [
+        "config.go",
+        "config_get.go",
+        "config_help.go",
+        "config_init.go",
+        "config_set.go",
+        "root.go",
+        "secrets.go",
+        "secrets_common.go",
+        "secrets_get.go",
+        "secrets_init.go",
+        "secrets_verify.go",
+        "start.go",
+    ],
+    importpath = "github.com/gnolang/gno/gno.land/cmd/gnoland",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//gno.land/pkg/gnoland",
+        "//gno.land/pkg/gnoland/ugnot",
+        "//gno.land/pkg/log",
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/bft/config",
+        "//tm2/pkg/bft/node",
+        "//tm2/pkg/bft/privval",
+        "//tm2/pkg/bft/state/eventstore/types",
+        "//tm2/pkg/bft/types",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/ed25519",
+        "//tm2/pkg/events",
+        "//tm2/pkg/os",
+        "//tm2/pkg/p2p/types",
+        "//tm2/pkg/std",
+        "//tm2/pkg/store/types",
+        "//tm2/pkg/telemetry",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_binary(
+    name = "gnoland",
+    embed = [":gnoland_lib"],
+    visibility = ["//visibility:public"],
+)

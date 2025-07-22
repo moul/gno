@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "doc",
+    srcs = [
+        "dirs.go",
+        "doc.go",
+        "json_doc.go",
+        "pkg.go",
+        "print.go",
+    ],
+    importpath = "github.com/gnolang/gno/gnovm/pkg/doc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gnovm/pkg/gnolang",
+        "//gnovm/pkg/gnomod",
+        "//gnovm/pkg/packages",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/std",
+        "@org_uber_go_multierr//:multierr",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":doc",
+    visibility = ["//visibility:public"],
+)

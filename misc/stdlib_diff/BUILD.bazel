@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "stdlib_diff_lib",
+    srcs = [
+        "diffstatus.go",
+        "filediff.go",
+        "main.go",
+        "operation.go",
+        "packagediff.go",
+        "report.go",
+    ],
+    embedsrcs = [
+        "templates/index_template.html",
+        "templates/package_diff_template.html",
+    ],
+    importpath = "github.com/gnolang/gno/misc/stdlib_diff",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_hexops_gotextdiff//:gotextdiff",
+        "@com_github_hexops_gotextdiff//myers",
+        "@com_github_hexops_gotextdiff//span",
+    ],
+)
+
+go_binary(
+    name = "stdlib_diff",
+    embed = [":stdlib_diff_lib"],
+    visibility = ["//visibility:public"],
+)

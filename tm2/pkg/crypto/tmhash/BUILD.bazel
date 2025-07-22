@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tmhash",
+    srcs = glob(
+        ["*.go"],
+        exclude = ["*_test.go"],
+    ),
+    importpath = "github.com/gnolang/gno/tm2/pkg/crypto/tmhash",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tmhash_test",
+    srcs = glob(["*_test.go"]),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tmhash",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "commands",
+    srcs = [
+        "command.go",
+        "empty.go",
+        "errors.go",
+        "io.go",
+        "types.go",
+        "utils.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/commands",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_peterbourgon_ff_v3//:ff",
+        "@org_golang_x_term//:term",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":commands",
+    visibility = ["//visibility:public"],
+)

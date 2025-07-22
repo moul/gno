@@ -1,0 +1,23 @@
+# Bazel ignore patterns
+# This prevents Bazel from processing these directories
+
+# Git
+.git
+
+# Build outputs
+bazel-out
+bazel-bin
+bazel-testlogs
+bazel-gno-bazel
+dist
+build
+
+# Go
+vendor
+
+# IDE
+.idea
+.vscode
+
+# User-specific
+.bazelrc.userbazel-*

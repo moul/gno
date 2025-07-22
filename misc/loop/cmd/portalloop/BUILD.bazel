@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "portalloop",
+    srcs = [
+        "handler.go",
+        "portal-loop.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/misc/loop/cmd/portalloop",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//contribs/tx-archive/backup",
+        "//contribs/tx-archive/backup/client/rpc",
+        "//contribs/tx-archive/backup/writer/standard",
+        "//misc/loop/cmd/cfg",
+        "//misc/loop/cmd/docker",
+        "@com_github_docker_docker//api/types:go_default_library",
+        "@com_github_docker_docker//client:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":portalloop",
+    visibility = ["//visibility:public"],
+)

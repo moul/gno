@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "keyscli",
+    srcs = [
+        "addpkg.go",
+        "call.go",
+        "maketx.go",
+        "root.go",
+        "run.go",
+    ],
+    importpath = "github.com/gnolang/gno/gno.land/pkg/keyscli",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gno.land/pkg/sdk/vm",
+        "//gnovm/pkg/gnolang",
+        "//tm2/pkg/amino",
+        "//tm2/pkg/commands",
+        "//tm2/pkg/crypto/keys",
+        "//tm2/pkg/crypto/keys/client",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/std",
+        "@com_github_peterbourgon_ff_v3//:ff",
+        "@com_github_peterbourgon_ff_v3//fftoml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":keyscli",
+    visibility = ["//visibility:public"],
+)

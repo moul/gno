@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "address",
+    srcs = ["book.go"],
+    importpath = "github.com/gnolang/gno/contribs/gnodev/pkg/address",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/crypto/keys",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":address",
+    visibility = ["//visibility:public"],
+)

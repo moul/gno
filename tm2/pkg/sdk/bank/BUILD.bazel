@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "pb_proto",
+    srcs = ["bank.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "bank",
+    srcs = [
+        "consts.go",
+        "errors.go",
+        "genesis.go",
+        "handler.go",
+        "invariants.go",
+        "keeper.go",
+        "msgs.go",
+        "package.go",
+        "params.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/sdk/bank",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/amino",
+        "//tm2/pkg/bft/abci/types",
+        "//tm2/pkg/crypto",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/sdk",
+        "//tm2/pkg/sdk/auth",
+        "//tm2/pkg/sdk/params",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bank",
+    visibility = ["//visibility:public"],
+)

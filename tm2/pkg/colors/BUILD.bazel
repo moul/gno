@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "colors",
+    srcs = ["colors.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/colors",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":colors",
+    visibility = ["//visibility:public"],
+)

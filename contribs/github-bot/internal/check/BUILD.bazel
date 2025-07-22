@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "check",
+    srcs = [
+        "check.go",
+        "cmd.go",
+        "comment.go",
+    ],
+    embedsrcs = ["comment.tmpl"],
+    importpath = "github.com/gnolang/gno/contribs/github-bot/internal/check",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+    deps = [
+        "//contribs/github-bot/internal/client",
+        "//contribs/github-bot/internal/config",
+        "//contribs/github-bot/internal/logger",
+        "//contribs/github-bot/internal/utils",
+        "//tm2/pkg/commands",
+        "@com_github_google_go_github_v64//github:go_default_library",
+        "@com_github_sethvargo_go_githubactions//:go_default_library",
+        "@com_github_xlab_treeprint//:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+)

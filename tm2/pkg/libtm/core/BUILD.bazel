@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "core",
+    srcs = [
+        "broadcast.go",
+        "cache.go",
+        "messages.go",
+        "options.go",
+        "quorum.go",
+        "state.go",
+        "store.go",
+        "tendermint.go",
+        "timeout.go",
+        "types.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/libtm/core",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":core",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "core_test",
+    srcs = [
+        "cache_test.go",
+        "cluster_test.go",
+        "mocks_test.go",
+        "options_test.go",
+        "quorum_test.go",
+        "tendermint_test.go",
+        "timeout_test.go",
+    ],
+    embed = [":core"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

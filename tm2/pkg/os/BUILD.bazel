@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "os",
+    srcs = [
+        "debug.go",
+        "net.go",
+        "os.go",
+        "path.go",
+        "process.go",
+        "tempfile.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/os",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":os",
+    visibility = ["//visibility:public"],
+)

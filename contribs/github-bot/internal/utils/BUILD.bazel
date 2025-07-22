@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "actions.go",
+        "github_const.go",
+        "prlist.go",
+        "testing.go",
+        "tree.go",
+    ],
+    importpath = "github.com/gnolang/gno/contribs/github-bot/internal/utils",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+    deps = [
+        "@com_github_sethvargo_go_githubactions//:go_default_library",
+        "@com_github_xlab_treeprint//:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//contribs/github-bot:__subpackages__"],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ws",
+    srcs = [
+        "client.go",
+        "options.go",
+    ],
+    importpath = "github.com/gnolang/gno/tm2/pkg/bft/rpc/lib/client/ws",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/bft/rpc/lib/types",
+        "//tm2/pkg/errors",
+        "//tm2/pkg/log",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ws",
+    visibility = ["//visibility:public"],
+)

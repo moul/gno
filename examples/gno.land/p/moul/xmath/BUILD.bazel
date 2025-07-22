@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "xmath",
+    srcs = ["generate.go"],
+    importpath = "github.com/gnolang/gno/examples/gno.land/p/moul/xmath",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":xmath",
+    visibility = ["//visibility:public"],
+)

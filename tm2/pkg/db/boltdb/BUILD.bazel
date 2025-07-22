@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "boltdb",
+    srcs = ["boltdb.go"],
+    importpath = "github.com/gnolang/gno/tm2/pkg/db/boltdb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tm2/pkg/db",
+        "//tm2/pkg/db/internal",
+        "@io_etcd_go_bbolt//:bbolt",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":boltdb",
+    visibility = ["//visibility:public"],
+)

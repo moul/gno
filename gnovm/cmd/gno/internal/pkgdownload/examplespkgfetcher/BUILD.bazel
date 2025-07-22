@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "examplespkgfetcher",
+    srcs = ["examplespkgfetcher.go"],
+    importpath = "github.com/gnolang/gno/gnovm/cmd/gno/internal/pkgdownload/examplespkgfetcher",
+    visibility = ["//gnovm/cmd/gno:__subpackages__"],
+    deps = [
+        "//gnovm/cmd/gno/internal/pkgdownload",
+        "//gnovm/pkg/gnoenv",
+        "//tm2/pkg/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":examplespkgfetcher",
+    visibility = ["//gnovm/cmd/gno:__subpackages__"],
+)
