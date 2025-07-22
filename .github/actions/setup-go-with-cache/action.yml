@@ -1,0 +1,41 @@
+name: Setup Go with Cache
+description: Sets up Go with proper caching for dependencies and build
+
+inputs:
+  go-version:
+    description: 'Go version to use'
+    required: false
+    default: '1.23.x'
+  module-path:
+    description: 'Path to the module (for go.mod detection)'
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Detect Go version from go.mod
+      if: inputs.go-version == '1.23.x' && inputs.module-path != '.'
+      shell: bash
+      run: |
+        cd ${{ inputs.module-path }}
+        if [ -f go.mod ]; then
+          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+          echo "GO_VERSION=${GO_VERSION}" >> $GITHUB_ENV
+        else
+          echo "GO_VERSION=${{ inputs.go-version }}" >> $GITHUB_ENV
+        fi
+    
+    - name: Set default Go version
+      if: inputs.go-version == '1.23.x' && inputs.module-path == '.'
+      shell: bash
+      run: echo "GO_VERSION=${{ inputs.go-version }}" >> $GITHUB_ENV
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache-dependency-path: |
+          ${{ inputs.module-path }}/go.sum
+          go.mod
+          go.sum

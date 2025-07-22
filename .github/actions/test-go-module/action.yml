@@ -1,0 +1,48 @@
+name: Test Go Module
+description: Run tests for a Go module with coverage
+
+inputs:
+  module-path:
+    description: 'Path to the module to test'
+    required: true
+  coverage-flag:
+    description: 'Codecov flag name'
+    required: false
+    default: ''
+  test-flags:
+    description: 'Additional test flags'
+    required: false
+    default: ''
+  timeout:
+    description: 'Test timeout'
+    required: false
+    default: '30m'
+
+runs:
+  using: composite
+  steps:
+    - name: Run tests
+      shell: bash
+      working-directory: ${{ inputs.module-path }}
+      run: |
+        # Set up coverage environment
+        export GOCOVERDIR=$(mktemp -d)
+        echo "GOCOVERDIR=$GOCOVERDIR" >> $GITHUB_ENV
+        
+        # Run tests with coverage
+        go test \
+          -v \
+          -p 1 \
+          -timeout ${{ inputs.timeout }} \
+          -covermode=set \
+          -coverprofile=coverage.out \
+          ${{ inputs.test-flags }} \
+          ./...
+    
+    - name: Upload coverage
+      if: inputs.coverage-flag != ''
+      uses: codecov/codecov-action@v5
+      with:
+        files: ${{ inputs.module-path }}/coverage.out
+        flags: ${{ inputs.coverage-flag }}
+        fail_ci_if_error: false

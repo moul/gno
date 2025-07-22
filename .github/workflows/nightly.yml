@@ -1,0 +1,68 @@
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run at midnight UTC
+  workflow_dispatch:     # Allow manual trigger
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push gno image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: misc/docker-images/Dockerfile.gno
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/gno:nightly
+            ghcr.io/${{ github.repository_owner }}/gno:nightly-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push gnoland image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: misc/docker-images/Dockerfile.gnoland
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/gnoland:nightly
+            ghcr.io/${{ github.repository_owner }}/gnoland:nightly-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  integration-test:
+    name: Integration Tests
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Run integration tests
+        run: |
+          # Run integration tests against nightly images
+          cd gno.land
+          go test -v -tags integration ./integration/...

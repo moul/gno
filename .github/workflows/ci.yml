@@ -1,0 +1,258 @@
+name: CI
+
+on:
+  push:
+    branches: [master, staging]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  # Quick checks that should fail fast
+  quick-checks:
+    name: Quick Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Check go.mod files are tidy
+        run: |
+          # Run go mod tidy in all directories with go.mod
+          find . -name go.mod -execdir go mod tidy \;
+          # Check if any files changed
+          if [[ -n "$(git diff)" ]]; then
+            echo "::error::go.mod files are not tidy. Please run 'make tidy'"
+            git diff
+            exit 1
+          fi
+      
+      - name: Check generated files are up to date
+        run: |
+          make generate
+          if [[ -n "$(git diff)" ]]; then
+            echo "::error::Generated files are out of date. Please run 'make generate'"
+            git diff
+            exit 1
+          fi
+
+  # Lint all Go code
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64
+          args: --config .github/golangci.yml
+
+  # Format check for Gno files
+  gno-fmt:
+    name: Gno Format Check
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Install gno
+        run: go install ./gnovm/cmd/gno
+      
+      - name: Check gno formatting
+        run: |
+          # Check formatting in stdlibs and examples
+          gno fmt -check gnovm/stdlibs/...
+          gno fmt -check examples/...
+
+  # Test GnoVM
+  test-gnovm:
+    name: Test GnoVM
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gnovm')) ||
+      contains(github.event.pull_request.head.ref, 'gnovm') ||
+      contains(github.event.pull_request.base.ref, 'gnovm')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Test GnoVM
+        run: |
+          cd gnovm
+          go test -v -p 1 -timeout 30m -covermode=set -coverprofile=coverage.out ./...
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./gnovm/coverage.out
+          flags: gnovm
+          fail_ci_if_error: false
+
+  # Test Gno.land
+  test-gnoland:
+    name: Test Gno.land
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gno.land')) ||
+      contains(github.event.pull_request.head.ref, 'gnoland') ||
+      contains(github.event.pull_request.base.ref, 'gnoland')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Test Gno.land
+        run: |
+          cd gno.land
+          go test -v -p 1 -timeout 30m -covermode=set -coverprofile=coverage.out ./...
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./gno.land/coverage.out
+          flags: gnoland
+          fail_ci_if_error: false
+
+  # Test TM2
+  test-tm2:
+    name: Test TM2
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'tm2')) ||
+      contains(github.event.pull_request.head.ref, 'tm2') ||
+      contains(github.event.pull_request.base.ref, 'tm2')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Test TM2
+        run: |
+          cd tm2
+          go test -v -p 1 -timeout 30m -covermode=set -coverprofile=coverage.out ./...
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./tm2/coverage.out
+          flags: tm2
+          fail_ci_if_error: false
+
+  # Test Examples
+  test-examples:
+    name: Test Examples
+    runs-on: ubuntu-latest
+    needs: [quick-checks, test-gnovm]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Install gno
+        run: go install ./gnovm/cmd/gno
+      
+      - name: Test examples
+        run: |
+          cd examples
+          gno test -v ./...
+
+  # Test Contribs
+  test-contribs:
+    name: Test Contribs - ${{ matrix.dir }}
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [gnodev, gnofaucet, gnogenesis, gnokeykc, gnomd]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get Go version
+        id: go-version
+        run: |
+          cd contribs/${{ matrix.dir }}
+          echo "version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_OUTPUT
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.go-version.outputs.version }}
+      
+      - name: Test ${{ matrix.dir }}
+        run: |
+          cd contribs/${{ matrix.dir }}
+          go test -v -p 1 -timeout 10m ./...
+
+  # Test Misc tools
+  test-misc:
+    name: Test Misc - ${{ matrix.dir }}
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [autocounterd, genproto, genstd, goscan, loop]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get Go version
+        id: go-version
+        run: |
+          cd misc/${{ matrix.dir }}
+          echo "version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_OUTPUT
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.go-version.outputs.version }}
+      
+      - name: Test ${{ matrix.dir }}
+        run: |
+          cd misc/${{ matrix.dir }}
+          go test -v -p 1 -timeout 10m ./...
+
+  # Summary job to ensure all tests passed
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [lint, gno-fmt, test-gnovm, test-gnoland, test-tm2, test-examples, test-contribs, test-misc]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+          echo "All CI checks passed!"

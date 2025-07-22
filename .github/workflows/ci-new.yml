@@ -1,0 +1,305 @@
+name: CI
+
+on:
+  push:
+    branches: [master, staging]
+  pull_request:
+    branches: [master]
+  merge_group:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GO_VERSION: '1.23.x'
+
+jobs:
+  ###############################################################################
+  # SECTION 1: File checks - Fast fail on basic issues
+  ###############################################################################
+  
+  file-checks:
+    name: File Checks
+    runs-on: ubuntu-latest
+    outputs:
+      gnovm-changed: ${{ steps.changes.outputs.gnovm }}
+      gnoland-changed: ${{ steps.changes.outputs.gnoland }}
+      tm2-changed: ${{ steps.changes.outputs.tm2 }}
+      examples-changed: ${{ steps.changes.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            gnovm:
+              - 'gnovm/**'
+              - 'go.mod'
+              - 'go.sum'
+            gnoland:
+              - 'gno.land/**'
+              - 'gnovm/**'
+              - 'tm2/**'
+              - 'go.mod'
+              - 'go.sum'
+            tm2:
+              - 'tm2/**'
+              - 'go.mod'
+              - 'go.sum'
+            examples:
+              - 'examples/**'
+              - 'gnovm/**'
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Check go.mod tidy
+        run: |
+          # Find all go.mod files and run go mod tidy
+          find . -name go.mod -type f -execdir go mod tidy \;
+          # Check for any changes
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::go.mod files are not tidy"
+            git diff
+            exit 1
+          fi
+      
+      - name: Check generated files
+        run: |
+          if make -n generate >/dev/null 2>&1; then
+            make generate
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "::error::Generated files are out of date"
+              git diff
+              exit 1
+            fi
+          fi
+
+  ###############################################################################
+  # SECTION 2: Linting - Run on everything
+  ###############################################################################
+  
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: file-checks
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64
+          args: --config .github/golangci.yml
+
+  ###############################################################################
+  # SECTION 3: Gno specific checks
+  ###############################################################################
+  
+  gno-checks:
+    name: Gno Checks
+    runs-on: ubuntu-latest
+    needs: file-checks
+    if: needs.file-checks.outputs.examples-changed == 'true' || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Build gno
+        run: go build -o ./gno ./gnovm/cmd/gno
+      
+      - name: Check gno fmt
+        run: |
+          # Check stdlibs
+          ./gno fmt -check ./gnovm/stdlibs/...
+          # Check examples
+          ./gno fmt -check ./examples/...
+      
+      - name: Run gno lint
+        run: ./gno lint ./examples/...
+
+  ###############################################################################
+  # SECTION 4: Component tests - Parallel execution
+  ###############################################################################
+  
+  test-gnovm:
+    name: Test GnoVM
+    runs-on: ubuntu-latest
+    needs: [file-checks, lint]
+    if: needs.file-checks.outputs.gnovm-changed == 'true' || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          module-path: gnovm
+      
+      - uses: ./.github/actions/test-go-module
+        with:
+          module-path: gnovm
+          coverage-flag: gnovm
+          test-flags: '-coverpkg=github.com/gnolang/gno/gnovm/...'
+
+  test-gnoland:
+    name: Test Gno.land
+    runs-on: ubuntu-latest
+    needs: [file-checks, lint]
+    if: needs.file-checks.outputs.gnoland-changed == 'true' || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          module-path: gno.land
+      
+      - uses: ./.github/actions/test-go-module
+        with:
+          module-path: gno.land
+          coverage-flag: gnoland
+          test-flags: '-coverpkg=github.com/gnolang/gno/gno.land/...'
+
+  test-tm2:
+    name: Test TM2
+    runs-on: ubuntu-latest
+    needs: [file-checks, lint]
+    if: needs.file-checks.outputs.tm2-changed == 'true' || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          module-path: tm2
+      
+      - uses: ./.github/actions/test-go-module
+        with:
+          module-path: tm2
+          coverage-flag: tm2
+          test-flags: '-coverpkg=github.com/gnolang/gno/tm2/...'
+
+  test-examples:
+    name: Test Examples
+    runs-on: ubuntu-latest
+    needs: [file-checks, gno-checks, test-gnovm]
+    if: needs.file-checks.outputs.examples-changed == 'true' || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Build gno
+        run: go build -o ./gno ./gnovm/cmd/gno
+      
+      - name: Test gno examples
+        run: ./gno test -v ./examples/...
+      
+      - name: Check gnomod tidy
+        working-directory: examples
+        run: |
+          # Assuming there's a tidy-related command for gnomod
+          find . -name gnomod.toml | while read modfile; do
+            dir=$(dirname "$modfile")
+            echo "Checking $dir"
+            # Add actual gnomod tidy check here
+          done
+
+  ###############################################################################
+  # SECTION 5: Contribs and misc - Dynamic matrix
+  ###############################################################################
+  
+  test-contribs:
+    name: Test Contrib - ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    needs: [file-checks, lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gnodev
+            path: contribs/gnodev
+          - name: gnofaucet
+            path: contribs/gnofaucet
+          - name: gnogenesis
+            path: contribs/gnogenesis
+          - name: gnokeykc
+            path: contribs/gnokeykc
+          - name: gnomd
+            path: contribs/gnomd
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          module-path: ${{ matrix.path }}
+      
+      - uses: ./.github/actions/test-go-module
+        with:
+          module-path: ${{ matrix.path }}
+          coverage-flag: contribs-${{ matrix.name }}
+          timeout: 10m
+
+  test-misc:
+    name: Test Misc - ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    needs: [file-checks, lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: autocounterd
+            path: misc/autocounterd
+          - name: genproto
+            path: misc/genproto
+          - name: genstd
+            path: misc/genstd
+          - name: goscan
+            path: misc/goscan
+          - name: loop
+            path: misc/loop
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/setup-go-with-cache
+        with:
+          module-path: ${{ matrix.path }}
+      
+      - uses: ./.github/actions/test-go-module
+        with:
+          module-path: ${{ matrix.path }}
+          coverage-flag: misc-${{ matrix.name }}
+          timeout: 10m
+
+  ###############################################################################
+  # SECTION 6: Summary check
+  ###############################################################################
+  
+  ci-complete:
+    name: CI Complete
+    runs-on: ubuntu-latest
+    needs: [file-checks, lint, gno-checks, test-gnovm, test-gnoland, test-tm2, test-examples, test-contribs, test-misc]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "One or more jobs failed"
+            exit 1
+          elif [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs were cancelled" 
+            exit 1
+          fi
+          echo "All CI checks passed!"

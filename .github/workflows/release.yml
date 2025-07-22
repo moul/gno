@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Run tests
+        run: make test
+      
+      - name: Build binaries
+        run: |
+          # Build all main binaries
+          make build
+          
+          # Create release directory
+          mkdir -p release
+          
+          # Copy binaries
+          cp gnovm/cmd/gno/gno release/
+          cp gno.land/cmd/gnoland/gnoland release/
+          cp gno.land/cmd/gnokey/gnokey release/
+          cp gno.land/cmd/gnoweb/gnoweb release/
+          
+          # Create archives
+          tar -czf release/gno-${{ github.ref_name }}-linux-amd64.tar.gz -C release gno gnoland gnokey gnoweb
+      
+      - name: Generate changelog
+        run: |
+          # Simple changelog from git log
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD > CHANGELOG.md
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.tar.gz
+          body_path: CHANGELOG.md
+          draft: true
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}

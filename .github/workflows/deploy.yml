@@ -1,0 +1,63 @@
+name: Deploy
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - test3
+          - test4
+
+permissions:
+  contents: read
+  id-token: write  # For OIDC authentication
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Build binaries
+        run: |
+          make build
+          
+          # Create deployment package
+          mkdir -p deploy
+          cp gno.land/cmd/gnoland/gnoland deploy/
+          cp gno.land/cmd/gnoweb/gnoweb deploy/
+          cp -r gno.land/genesis deploy/
+          cp -r examples deploy/
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
+          aws-region: us-east-1
+      
+      - name: Deploy to S3
+        run: |
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          aws s3 sync deploy/ s3://gno-deployments/$ENV/ --delete
+      
+      - name: Restart services
+        run: |
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          # Simple service restart (replace with your actual deployment mechanism)
+          aws ssm send-command \
+            --instance-ids "${{ secrets[format('AWS_INSTANCE_{0}', env.ENV)] }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["systemctl restart gnoland", "systemctl restart gnoweb"]'

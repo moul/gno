@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+    branches: [master, staging]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-binaries:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      
+      - name: Build all binaries
+        run: |
+          # Build core binaries
+          echo "Building gno..."
+          go build -v -o ./build/gno ./gnovm/cmd/gno
+          
+          echo "Building gnoland..."
+          go build -v -o ./build/gnoland ./gno.land/cmd/gnoland
+          
+          echo "Building gnokey..."
+          go build -v -o ./build/gnokey ./gno.land/cmd/gnokey
+          
+          echo "Building gnoweb..."
+          go build -v -o ./build/gnoweb ./gno.land/cmd/gnoweb
+          
+          echo "Building gnogenesis..."
+          go build -v -o ./build/gnogenesis ./contribs/gnogenesis
+          
+          echo "Building gnodev..."
+          go build -v -o ./build/gnodev ./contribs/gnodev
+          
+          echo "Building gnofaucet..."
+          go build -v -o ./build/gnofaucet ./contribs/gnofaucet
+      
+      - name: Test binaries
+        run: |
+          ./build/gno version
+          ./build/gnoland version
+          ./build/gnokey --help
+          ./build/gnoweb --help
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gno-binaries
+          path: build/
+          retention-days: 3
