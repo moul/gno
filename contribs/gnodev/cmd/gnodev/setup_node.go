@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 
 	gnodev "github.com/gnolang/gno/contribs/gnodev/pkg/dev"
@@ -18,16 +20,27 @@ import (
 func setupDevNode(ctx context.Context, cfg *AppConfig, nodeConfig *gnodev.NodeConfig, paths ...string) (*gnodev.Node, error) {
 	logger := nodeConfig.Logger
 
+	// Check for auto-genesis in data directory first
+	genesisPath := cfg.genesisFile
+	if genesisPath == "" && cfg.dataDir != "" {
+		// Look for auto-genesis file in data directory
+		autoGenesisPath := filepath.Join(cfg.dataDir, "genesis.json")
+		if _, err := os.Stat(autoGenesisPath); err == nil {
+			genesisPath = autoGenesisPath
+			logger.Info("found auto-genesis file", "path", autoGenesisPath)
+		}
+	}
+	
 	if cfg.txsFile != "" { // Load txs files
 		var err error
 		nodeConfig.InitialTxs, err = gnoland.ReadGenesisTxs(ctx, cfg.txsFile)
 		if err != nil {
 			return nil, fmt.Errorf("unable to load transactions: %w", err)
 		}
-	} else if cfg.genesisFile != "" { // Load genesis file
-		state, err := extractAppStateFromGenesisFile(cfg.genesisFile)
+	} else if genesisPath != "" { // Load genesis file (either explicit or auto-discovered)
+		state, err := extractAppStateFromGenesisFile(genesisPath)
 		if err != nil {
-			return nil, fmt.Errorf("unable to load genesis file %q: %w", cfg.genesisFile, err)
+			return nil, fmt.Errorf("unable to load genesis file %q: %w", genesisPath, err)
 		}
 
 		// Override balances and txs
@@ -40,7 +53,7 @@ func setupDevNode(ctx context.Context, cfg *AppConfig, nodeConfig *gnodev.NodeCo
 			nodeConfig.InitialTxs[index] = nodeTx
 		}
 
-		logger.Info("genesis file loaded", "path", cfg.genesisFile, "txs", len(stateTxs))
+		logger.Info("genesis file loaded", "path", genesisPath, "txs", len(stateTxs))
 	}
 
 	if len(paths) > 0 {
@@ -70,6 +83,8 @@ func setupDevNodeConfig(
 	config.NoReplay = cfg.noReplay
 	config.MaxGasPerBlock = cfg.maxGas
 	config.ChainID = cfg.chainId
+	config.DataDir = cfg.dataDir
+	config.ArchiveTxs = cfg.archiveTxs
 
 	// other listeners
 	config.TMConfig.P2P.ListenAddress = defaultLocalAppConfig.nodeP2PListenerAddr

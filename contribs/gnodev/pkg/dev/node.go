@@ -1,6 +1,7 @@
 package dev
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log/slog"
@@ -27,6 +28,8 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/bft/rpc/client"
 	bft "github.com/gnolang/gno/tm2/pkg/bft/types"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
+	"github.com/gnolang/gno/tm2/pkg/db"
+	"github.com/gnolang/gno/tm2/pkg/db/memdb"
 	tm2events "github.com/gnolang/gno/tm2/pkg/events"
 	"github.com/gnolang/gno/tm2/pkg/log"
 	"github.com/gnolang/gno/tm2/pkg/sdk"
@@ -80,6 +83,12 @@ type NodeConfig struct {
 
 	// ChainDomain specifies the domain name associated with the blockchain network.
 	ChainDomain string
+
+	// DataDir specifies the directory for persistent data storage. If empty, uses in-memory storage.
+	DataDir string
+
+	// ArchiveTxs enables archiving of transactions to JSONL file in data directory.
+	ArchiveTxs bool
 }
 
 func DefaultNodeConfig(rootdir, domain string) *NodeConfig {
@@ -136,6 +145,9 @@ type Node struct {
 
 	// state
 	initialState, state []gnoland.TxWithMetadata
+	// transaction archiving
+	txArchiveFile   *os.File
+	txArchiver      *bufio.Writer
 	currentStateIndex   int
 }
 
@@ -175,7 +187,59 @@ func (n *Node) Close() error {
 	n.muNode.Lock()
 	defer n.muNode.Unlock()
 
+	// Close transaction archive if open
+	if n.txArchiver != nil {
+		n.txArchiver.Flush()
+		n.txArchiveFile.Close()
+		n.txArchiver = nil
+		n.txArchiveFile = nil
+	}
+
 	return n.Node.Stop()
+}
+
+// Snapshot exports the current state to a genesis file in the data directory
+func (n *Node) Snapshot() error {
+	n.muNode.Lock()
+	defer n.muNode.Unlock()
+
+	if n.config.DataDir == "" {
+		return fmt.Errorf("snapshot requires data-dir to be set")
+	}
+
+	// Get current state
+	state, err := n.getBlockStoreState(context.Background())
+	if err != nil {
+		return fmt.Errorf("unable to get current state: %w", err)
+	}
+
+	// Create genesis state
+	genesis := gnoland.DefaultGenState()
+	genesis.Balances = n.config.BalancesList
+	genesis.Txs = state
+
+	// Export to file
+	genesisPath := filepath.Join(n.config.DataDir, "genesis.json")
+	doc := &bft.GenesisDoc{
+		GenesisTime: n.startTime,
+		ChainID:     n.config.ChainID,
+		ConsensusParams: abci.ConsensusParams{
+			Block: &abci.BlockParams{
+				MaxTxBytes:   1_000_000,
+				MaxDataBytes: 2_000_000,
+				MaxGas:       n.config.MaxGasPerBlock,
+				TimeIotaMS:   100,
+			},
+		},
+		AppState: genesis,
+	}
+
+	if err := doc.SaveTo(genesisPath); err != nil {
+		return fmt.Errorf("unable to save genesis: %w", err)
+	}
+
+	n.logger.Info("snapshot saved", "path", genesisPath, "txs", len(state))
+	return nil
 }
 
 func (n *Node) ListPkgs() []packages.Package {
@@ -539,6 +603,30 @@ func (n *Node) handleEventTX(evt tm2events.Event) {
 			n.state = nil // invalidate state
 
 			n.logger.Info("node state", "index", n.currentStateIndex, "height", heigh)
+			
+			// Archive transaction if enabled
+			if n.config.ArchiveTxs && n.txArchiver != nil {
+				var tx std.Tx
+				if err := amino.Unmarshal(data.Result.Tx, &tx); err == nil {
+					// Create TxWithMetadata
+					txWithMeta := gnoland.TxWithMetadata{
+						Tx: tx,
+						Metadata: &gnoland.GnoTxMetadata{
+							Timestamp: time.Now().Unix(),
+						},
+					}
+					
+					// Marshal to JSON
+					if jsonData, err := amino.MarshalJSON(txWithMeta); err == nil {
+						// Write to archive file
+						n.txArchiver.Write(jsonData)
+						n.txArchiver.WriteByte('\n')
+						n.txArchiver.Flush() // Flush immediately for live archiving
+					} else {
+						n.logger.Error("unable to marshal tx for archive", "error", err)
+					}
+				}
+			}
 		}()
 
 		resEvt := events.TxResult{
@@ -565,8 +653,42 @@ func (n *Node) rebuildNode(ctx context.Context, genesis gnoland.GnoGenesisState)
 		return fmt.Errorf("unable to stop the node: %w", err)
 	}
 
+	// Create database based on DataDir configuration
+	var database db.DB
+	if n.config.DataDir != "" {
+		// Ensure data directory exists
+		if err := os.MkdirAll(n.config.DataDir, 0755); err != nil {
+			return fmt.Errorf("unable to create data directory: %w", err)
+		}
+		// Create persistent database
+		database, err = db.NewDB("gnodev", db.GoLevelDBBackend, n.config.DataDir)
+		if err != nil {
+			return fmt.Errorf("unable to create persistent database: %w", err)
+		}
+		
+		// Setup transaction archiving if enabled
+		if n.config.ArchiveTxs {
+			// Close existing archive file if any
+			if n.txArchiveFile != nil {
+				n.txArchiver.Flush()
+				n.txArchiveFile.Close()
+			}
+			
+			// Create archive file
+			archivePath := filepath.Join(n.config.DataDir, "archive.jsonl")
+			n.txArchiveFile, err = os.OpenFile(archivePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				return fmt.Errorf("unable to create tx archive file: %w", err)
+			}
+			n.txArchiver = bufio.NewWriter(n.txArchiveFile)
+		}
+	} else {
+		// Use in-memory database
+		database = memdb.NewMemDB()
+	}
+
 	// Setup node config
-	nodeConfig := newNodeConfig(n.config.TMConfig, n.config.ChainID, n.config.ChainDomain, genesis)
+	nodeConfig := newNodeConfig(n.config.TMConfig, n.config.ChainID, n.config.ChainDomain, genesis, database)
 	nodeConfig.GenesisTxResultHandler = n.genesisTxResultHandler
 	// Speed up stdlib loading after first start (saves about 2-3 seconds on each reload).
 	nodeConfig.CacheStdlibLoad = true
@@ -657,7 +779,7 @@ func (n *Node) genesisTxResultHandler(ctx sdk.Context, tx std.Tx, res sdk.Result
 	return
 }
 
-func newNodeConfig(tmc *tmcfg.Config, chainid, chaindomain string, appstate gnoland.GnoGenesisState) *gnoland.InMemoryNodeConfig {
+func newNodeConfig(tmc *tmcfg.Config, chainid, chaindomain string, appstate gnoland.GnoGenesisState, db db.DB) *gnoland.InMemoryNodeConfig {
 	// Create Mocked Identity
 	pv := gnoland.NewMockedPrivValidator()
 	genesis := gnoland.NewDefaultGenesisConfig(chainid, chaindomain)
@@ -679,6 +801,7 @@ func newNodeConfig(tmc *tmcfg.Config, chainid, chaindomain string, appstate gnol
 		TMConfig:      tmc,
 		Genesis:       genesis,
 		VMOutput:      os.Stdout,
+		DB:            db,
 	}
 	return cfg
 }

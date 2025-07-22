@@ -354,6 +354,20 @@ func (ds *App) setupHandlers(ctx context.Context) (http.Handler, error) {
 		})
 	}
 
+	// Add snapshot endpoint (always available if data-dir is set)
+	if ds.cfg.dataDir != "" {
+		mux.HandleFunc("/snapshot", func(res http.ResponseWriter, req *http.Request) {
+			if err := ds.devNode.Snapshot(); err != nil {
+				ds.logger.Error("failed to create snapshot", slog.Any("err", err))
+				res.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(res, "Error: %v\n", err)
+			} else {
+				res.WriteHeader(http.StatusOK)
+				fmt.Fprintf(res, "Snapshot created successfully\n")
+			}
+		})
+	}
+
 	if !ds.cfg.noWatch {
 		evtstarget := fmt.Sprintf("%s/_events", ds.cfg.webListenerAddr)
 		mux.Handle("/_events", ds.emitterServer)

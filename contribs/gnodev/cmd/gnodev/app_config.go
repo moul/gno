@@ -42,6 +42,10 @@ type AppConfig struct {
 	unsafeAPI   bool
 	interactive bool
 	paths       string
+	
+	// Persistence Configuration
+	dataDir     string
+	archiveTxs  bool
 }
 
 func (c *AppConfig) RegisterFlagsWith(fs *flag.FlagSet, defaultCfg AppConfig) {
@@ -225,6 +229,20 @@ func (c *AppConfig) RegisterFlagsWith(fs *flag.FlagSet, defaultCfg AppConfig) {
 		"v",
 		defaultCfg.verbose,
 		"enable verbose output for development",
+	)
+
+	fs.StringVar(
+		&c.dataDir,
+		"data-dir",
+		defaultCfg.dataDir,
+		"directory for persistent data storage (empty = in-memory)",
+	)
+
+	fs.BoolVar(
+		&c.archiveTxs,
+		"archive-txs",
+		defaultCfg.archiveTxs,
+		"archive transactions to JSONL file in data directory",
 	)
 }
 
