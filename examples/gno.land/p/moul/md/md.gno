@@ -316,3 +316,94 @@ func ColumnsN(content []string, colsPerRow int, padded bool) string {
 	}
 	return sb.String()
 }
+
+// Form creates a Gno form with the specified path attribute.
+// If path is empty, the form will submit to the current URL with query parameters.
+// Example: Form("user", content) => "<gno-form path=\"user\">\ncontent\n</gno-form>\n"
+func Form(path string, content string) string {
+	var sb strings.Builder
+	if path != "" {
+		sb.WriteString("<gno-form path=\"" + EscapeText(path) + "\">\n")
+	} else {
+		sb.WriteString("<gno-form>\n")
+	}
+	sb.WriteString(content)
+	if !strings.HasSuffix(content, "\n") {
+		sb.WriteString("\n")
+	}
+	sb.WriteString("</gno-form>\n")
+	return sb.String()
+}
+
+// FormInput creates a Gno form input element.
+// Required: name must be provided.
+// Optional: inputType defaults to "text", placeholder defaults to "Enter value"
+// Example: FormInput("username", "text", "Enter username") => "  <gno-input name=\"username\" type=\"text\" placeholder=\"Enter username\" />\n"
+func FormInput(name, inputType, placeholder string) string {
+	if name == "" {
+		panic("FormInput: name is required")
+	}
+	
+	// Default values
+	if inputType == "" {
+		inputType = "text"
+	}
+	if placeholder == "" {
+		placeholder = "Enter value"
+	}
+	
+	return "  <gno-input name=\"" + EscapeText(name) + 
+		"\" type=\"" + EscapeText(inputType) + 
+		"\" placeholder=\"" + EscapeText(placeholder) + "\" />\n"
+}
+
+// FormBuilder provides a fluent API for building forms with multiple inputs.
+type FormBuilder struct {
+	path   string
+	inputs []string
+}
+
+// NewForm creates a new FormBuilder with optional path.
+func NewForm(path string) *FormBuilder {
+	return &FormBuilder{
+		path:   path,
+		inputs: make([]string, 0),
+	}
+}
+
+// AddInput adds an input field to the form.
+func (fb *FormBuilder) AddInput(name, inputType, placeholder string) *FormBuilder {
+	fb.inputs = append(fb.inputs, FormInput(name, inputType, placeholder))
+	return fb
+}
+
+// AddTextInput adds a text input field to the form (convenience method).
+func (fb *FormBuilder) AddTextInput(name, placeholder string) *FormBuilder {
+	return fb.AddInput(name, "text", placeholder)
+}
+
+// AddNumberInput adds a number input field to the form (convenience method).
+func (fb *FormBuilder) AddNumberInput(name, placeholder string) *FormBuilder {
+	return fb.AddInput(name, "number", placeholder)
+}
+
+// AddEmailInput adds an email input field to the form (convenience method).
+func (fb *FormBuilder) AddEmailInput(name, placeholder string) *FormBuilder {
+	return fb.AddInput(name, "email", placeholder)
+}
+
+// AddPasswordInput adds a password input field to the form (convenience method).
+func (fb *FormBuilder) AddPasswordInput(name, placeholder string) *FormBuilder {
+	return fb.AddInput(name, "password", placeholder)
+}
+
+// AddTelInput adds a telephone input field to the form (convenience method).
+func (fb *FormBuilder) AddTelInput(name, placeholder string) *FormBuilder {
+	return fb.AddInput(name, "tel", placeholder)
+}
+
+// Build generates the final form HTML.
+func (fb *FormBuilder) Build() string {
+	content := strings.Join(fb.inputs, "")
+	return Form(fb.path, content)
+}
