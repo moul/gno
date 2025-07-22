@@ -31,6 +31,10 @@ func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
 		return vh.handleMsgCall(ctx, msg)
 	case MsgRun:
 		return vh.handleMsgRun(ctx, msg)
+	case MsgCreateSession:
+		return vh.handleMsgCreateSession(ctx, msg)
+	case MsgRevokeSession:
+		return vh.handleMsgRevokeSession(ctx, msg)
 	default:
 		errMsg := fmt.Sprintf("unrecognized vm message type: %T", msg)
 		return abciResult(std.ErrUnknownRequest(errMsg))
@@ -253,6 +257,20 @@ func (vh vmHandler) queryStorage(ctx sdk.Context, req abci.RequestQuery) (res ab
 	}
 	res.Data = []byte(result)
 	return
+}
+
+// Handle MsgCreateSession.
+func (vh vmHandler) handleMsgCreateSession(ctx sdk.Context, msg MsgCreateSession) sdk.Result {
+	// Session creation is not handled in the VM
+	// It should be handled at the account level
+	return abciResult(std.ErrInternal("session creation should be handled by auth module"))
+}
+
+// Handle MsgRevokeSession.
+func (vh vmHandler) handleMsgRevokeSession(ctx sdk.Context, msg MsgRevokeSession) sdk.Result {
+	// Session revocation is not handled in the VM
+	// It should be handled at the account level
+	return abciResult(std.ErrInternal("session revocation should be handled by auth module"))
 }
 
 // ----------------------------------------

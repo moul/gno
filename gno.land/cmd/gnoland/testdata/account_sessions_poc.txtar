@@ -1,0 +1,44 @@
+# Proof of concept for account sessions
+# This test demonstrates the structure and intended usage of account sessions
+
+## start a new node
+gnoland start
+
+# Test the new gnokey session commands structure
+! gnokey session
+stderr 'manage account sessions'
+stderr 'session <subcommand>'
+
+# Test session create help
+! gnokey session create --help
+stderr 'create a new session for an account'
+stderr 'transfer-capacity'
+stderr 'validation-only'
+stderr 'realms'
+
+# Test session list help
+! gnokey session list --help
+stderr 'list sessions for an account'
+
+# Test session revoke help
+! gnokey session revoke --help
+stderr 'revoke a session from an account'
+
+# Demonstrate intended usage (these would work with full implementation)
+# 1. Create a limited session for daily use (key generated securely)
+# gnokey session create -account main -name "daily spending" -transfer-capacity 100ugnot -expiration 24h
+
+# 2. Create a validation-only session for validators  
+# gnokey session create -account validator -name "validator node" -validation-only
+
+# 3. Create an app-specific session with realm restrictions
+# gnokey session create -account main -name "mobile app" -realms "r/myapp/*" -can-manage-packages
+
+# 4. Use a session to send coins (using generated key name)
+# gnokey maketx send -send "50ugnot" -to $recipient -account main -session main_session_1625097600
+
+# 5. List active sessions
+# gnokey session list -account main
+
+# 6. Revoke a compromised session (using generated key name)
+# gnokey session revoke -account main -session-key-name main_session_1625097600

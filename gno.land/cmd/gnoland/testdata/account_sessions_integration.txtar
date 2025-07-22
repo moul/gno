@@ -1,0 +1,61 @@
+# Test account sessions complete workflow
+
+## Create a test account with funds
+loadpkg gno.land/r/demo/sessions
+
+adduser alice
+
+## Start gnoland node
+gnoland start
+
+## Check initial balance
+gnokey query auth/accounts/$alice_address
+
+## Create a session with limited transfer capacity
+gnokey session create -account alice -name test-session -transfer-capacity 1000ugnot -gas-wanted 1000000 -gas-fee 1ugnot -broadcast
+
+## List sessions (local keybase)
+gnokey session list -account alice
+
+## Try to send funds using the session key (should work within capacity)
+gnokey maketx send -send 500ugnot -to g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5 -gas-wanted 50000 -gas-fee 1ugnot -broadcast test-session
+
+## Try to send funds exceeding capacity (should fail)
+! gnokey maketx send -send 600ugnot -to g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5 -gas-wanted 50000 -gas-fee 1ugnot -broadcast test-session
+stderr 'session transfer capacity exceeded'
+
+## Create a session with realm restrictions
+gnokey session create -account alice -name realm-session -realms 'gno.land/r/demo/*' -gas-wanted 1000000 -gas-fee 1ugnot -broadcast
+
+## Try to call allowed realm (should work)
+gnokey maketx call -pkgpath gno.land/r/demo/sessions -func Hello -args "World" -gas-wanted 100000 -gas-fee 1ugnot -broadcast realm-session
+
+## Try to call disallowed realm (should fail) 
+! gnokey maketx call -pkgpath gno.land/r/other/realm -func Test -gas-wanted 100000 -gas-fee 1ugnot -broadcast realm-session
+stderr 'realm access denied'
+
+## Create a session with expiration
+gnokey session create -account alice -name temp-session -expire-in 1h -gas-wanted 1000000 -gas-fee 1ugnot -broadcast
+
+## Revoke a session
+gnokey session revoke -account alice -session-key-name test-session -gas-wanted 100000 -gas-fee 1ugnot -broadcast
+
+## Try to use revoked session (should fail)
+! gnokey maketx send -send 100ugnot -to g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5 -gas-wanted 50000 -gas-fee 1ugnot -broadcast test-session
+stderr 'session not found'
+
+## Create a session with management permissions
+gnokey session create -account alice -name admin-session --can-manage-sessions -gas-wanted 1000000 -gas-fee 1ugnot -broadcast
+
+## Use admin session to create another session
+gnokey session create -account alice -name sub-session -transfer-capacity 100ugnot -gas-wanted 1000000 -gas-fee 1ugnot -broadcast admin-session
+
+## Verify the complete session lifecycle worked
+gnokey query auth/accounts/$alice_address
+stdout 'sessions'
+
+-- gno.mod --
+module test
+
+-- alice.key --
+g1x8urh3mt343aqfqxq9lxc6l5244zx402kqyf7a

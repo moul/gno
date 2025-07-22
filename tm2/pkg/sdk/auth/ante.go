@@ -216,6 +216,23 @@ func NewAnteHandler(
 			ak.SetAccount(newCtx, signerAccs[i])
 		}
 
+		// Validate session permissions for each signer
+		for i := range stdSigs {
+			var pubKey crypto.PubKey
+			if len(signerInfos) > i && signerInfos[i].PubKey != nil {
+				pubKey = signerInfos[i].PubKey
+			} else {
+				pubKey, _ = ProcessPubKey(signerAccs[i], stdSigs[i])
+			}
+			
+			if pubKey != nil {
+				// Validate session permissions for this transaction
+				if res := ValidateSessionForTx(newCtx, signerAccs[i], pubKey, tx); !res.IsOK() {
+					return newCtx, res, true
+				}
+			}
+		}
+
 		// TODO: tx tags (?)
 		return newCtx, sdk.Result{GasWanted: tx.Fee.GasWanted}, false // continue...
 	}

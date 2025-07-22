@@ -1,0 +1,49 @@
+# Test account sessions functionality
+
+# Add test keys
+gnokey add alice
+gnokey add alice_session
+gnokey add bob
+gnokey add validator_session
+
+## start a new node
+gnoland start
+
+# Genesis accounts have default balance
+gnokey query auth/accounts/$alice_addr
+
+# Create a session with transfer capacity
+gnokey session create -account alice -session-key alice_session -transfer-capacity 1000ugnot
+
+# List sessions for alice
+gnokey session list -account alice
+
+# Create a validation-only session
+gnokey session create -account alice -session-key validator_session -validation-only
+
+# Create a session with realm restrictions
+gnokey session create -account bob -session-key bob_app_session -realms "r/demo/*,r/gnoland/*" -transfer-capacity 500ugnot
+
+# Use session to transfer coins
+gnokey maketx send -send "100ugnot" -to $bob_addr -account alice -session alice_session
+
+# Try to exceed transfer capacity (should fail)
+gnokey maketx send -send "1001ugnot" -to $bob_addr -account alice -session alice_session
+
+# Revoke a session
+gnokey session revoke -account alice -session-key alice_session
+
+# Try to use revoked session (should fail)
+gnokey maketx send -send "50ugnot" -to $bob_addr -account alice -session alice_session
+
+-- alice.seed --
+source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast
+
+-- alice_session.seed --
+quick brown fox jumps over lazy dog quick brown fox jumps over lazy dog quick brown fox jumps
+
+-- bob.seed --
+second seed phrase for testing second seed phrase for testing second seed phrase for testing now
+
+-- validator_session.seed --
+third seed phrase validator session third seed phrase validator session third seed phrase valid

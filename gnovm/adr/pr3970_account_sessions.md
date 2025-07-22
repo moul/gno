@@ -50,6 +50,11 @@ wallets see total account activity and choose appropriate starting sequences.
 The implementation maintains backward compatibility by falling back to message
 signers when signatures lack public keys (genesis transactions).
 
+**Key Generation Security**: Session keys are generated automatically using
+cryptographically secure entropy. Users cannot provide their own session keys,
+preventing weak key vulnerabilities. Generated keys are stored in the keybase
+with unique naming (`account_session_timestamp`) to prevent collisions.
+
 ## Usage
 
 - **Validator keys**: Validation-only sessions for node operators

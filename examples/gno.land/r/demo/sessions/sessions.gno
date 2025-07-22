@@ -1,0 +1,191 @@
+// Package sessions demonstrates account session functionality
+package sessions
+
+import (
+	"std"
+	"strings"
+	"time"
+
+	"gno.land/p/demo/ufmt"
+)
+
+var (
+	// Mock session storage for demonstration
+	sessions = make(map[string]*SessionInfo)
+)
+
+// SessionInfo represents a session's properties for demonstration
+type SessionInfo struct {
+	Account          std.Address
+	SessionKey       string
+	TransferCapacity std.Coins
+	UnlimitedTransfer bool
+	CanManageSessions bool
+	CanManagePackages bool
+	ValidationOnly    bool
+	ExpirationTime    time.Time
+	RealmsWhitelist   []string
+	CreatedAt         time.Time
+	LastUsed          time.Time
+}
+
+// CreateSession demonstrates creating a new session
+func CreateSession(account std.Address, sessionKey string, transferCapacity string) string {
+	// In real implementation, this would:
+	// 1. Verify the caller is the account owner or has session management permission
+	// 2. Create the session in the account's session list
+	// 3. Set up the permissions and capacity
+	
+	// For demo purposes, we skip authentication
+	// caller := std.GetOrigCaller()
+	// if caller != account {
+	//     panic("only account owner can create sessions")
+	// }
+
+	// Parse transfer capacity
+	var capacity std.Coins
+	if transferCapacity != "" {
+		// In real implementation, would use std.ParseCoins
+		capacity = std.Coins{std.NewCoin("ugnot", 1000)}
+	}
+
+	session := &SessionInfo{
+		Account:          account,
+		SessionKey:       sessionKey,
+		TransferCapacity: capacity,
+		CreatedAt:        time.Now(),
+	}
+
+	key := account.String() + ":" + sessionKey
+	sessions[key] = session
+
+	return ufmt.Sprintf("Session created for %s with key %s", account, sessionKey)
+}
+
+// UseSession demonstrates using a session for a transfer
+func UseSession(account std.Address, sessionKey string, amount string) string {
+	key := account.String() + ":" + sessionKey
+	session, exists := sessions[key]
+	if !exists {
+		panic("session not found")
+	}
+
+	// Check expiration
+	if !session.ExpirationTime.IsZero() && time.Now().After(session.ExpirationTime) {
+		panic("session expired")
+	}
+
+	// In real implementation, would:
+	// 1. Verify the signature matches the session key
+	// 2. Check transfer capacity
+	// 3. Deduct from capacity if not unlimited
+	// 4. Execute the transfer
+
+	session.LastUsed = time.Now()
+
+	return ufmt.Sprintf("Transfer of %s executed using session %s", amount, sessionKey)
+}
+
+// ListSessions shows all sessions for an account
+func ListSessions(account std.Address) string {
+	var result strings.Builder
+	result.WriteString(ufmt.Sprintf("Sessions for %s:\n", account))
+
+	count := 0
+	for _, session := range sessions {
+		if session.Account == account {
+			count++
+			result.WriteString(ufmt.Sprintf("\n%d. Session Key: %s\n", count, session.SessionKey))
+			result.WriteString(ufmt.Sprintf("   Transfer Capacity: %s\n", session.TransferCapacity.String()))
+			result.WriteString(ufmt.Sprintf("   Created: %s\n", session.CreatedAt.Format(time.RFC3339)))
+			if !session.LastUsed.IsZero() {
+				result.WriteString(ufmt.Sprintf("   Last Used: %s\n", session.LastUsed.Format(time.RFC3339)))
+			}
+			if session.ValidationOnly {
+				result.WriteString("   Type: Validation Only\n")
+			}
+			if session.UnlimitedTransfer {
+				result.WriteString("   Transfer: Unlimited\n")
+			}
+		}
+	}
+
+	if count == 0 {
+		result.WriteString("No active sessions")
+	}
+
+	return result.String()
+}
+
+// RevokeSession removes a session
+func RevokeSession(account std.Address, sessionKey string) string {
+	// For demo purposes, we skip authentication
+	// caller := std.GetOrigCaller()
+	// if caller != account {
+	//     panic("only account owner can revoke sessions")
+	// }
+
+	key := account.String() + ":" + sessionKey
+	if _, exists := sessions[key]; !exists {
+		panic("session not found")
+	}
+
+	delete(sessions, key)
+
+	return ufmt.Sprintf("Session %s revoked for account %s", sessionKey, account)
+}
+
+// Render displays session demo information
+func Render(path string) string {
+	if path == "" {
+		return `# Account Sessions Demo
+
+This realm demonstrates the account sessions feature, which allows:
+
+- Creating sessions with limited permissions
+- Setting transfer capacity limits
+- Restricting realm access
+- Setting expiration times
+- Managing validation-only sessions
+
+## Interactive Demo
+
+Try these functions:
+
+1. **Create a session**: ` + "`CreateSession(account, \"daily\", \"100ugnot\")`" + `
+2. **Use a session**: ` + "`UseSession(account, \"daily\", \"50ugnot\")`" + `
+3. **List sessions**: ` + "`ListSessions(account)`" + `
+4. **Revoke a session**: ` + "`RevokeSession(account, \"daily\")`" + `
+
+## Documentation
+
+Visit the comprehensive documentation:
+
+- [Examples](/r/demo/sessions:docs/examples) - Command examples
+- [Features](/r/demo/sessions:docs/features) - Feature overview  
+- [Security](/r/demo/sessions:docs/security) - Best practices
+- [Patterns](/r/demo/sessions:docs/patterns) - Usage patterns
+
+## Security Benefits
+
+- Keep master key offline
+- Delegate limited permissions
+- Automatic expiration
+- Granular access control
+- Easy revocation of compromised keys`
+	}
+
+	// Check if it's a documentation path
+	if strings.HasPrefix(path, "docs") {
+		return RenderDocs(path)
+	}
+
+	// Parse path to show specific account sessions
+	if strings.HasPrefix(path, "account/") {
+		addrStr := strings.TrimPrefix(path, "account/")
+		// In real implementation, would parse address properly
+		return ListSessions(std.Address(addrStr))
+	}
+
+	return "Unknown path: " + path
+}

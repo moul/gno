@@ -41,8 +41,9 @@ func NewRootCmd(io commands.IO, base client.BaseOptions) *commands.Command {
 		client.NewBroadcastCmd(cfg, io),
 		client.NewMultisignCmd(cfg, io),
 
-		// Custom MakeTX command
+		// Custom commands
 		NewMakeTxCmd(cfg, io),
+		NewSessionCmd(cfg, io),
 	)
 
 	return cmd

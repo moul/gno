@@ -82,8 +82,8 @@ var _ std.AccountUnrestricter = &GnoAccount{}
 
 type GnoAccount struct {
 	std.BaseAccount
-	Attributes BitSet       `json:"attributes" yaml:"attributes"`
-	Sessions   []GnoSession `json:"sessions" yaml:"sessions"`
+	Attributes BitSet        `json:"attributes" yaml:"attributes"`
+	Sessions   []*GnoSession `json:"sessions" yaml:"sessions"`
 }
 
 // gc (garbage collect) removes expired sessions from the account.
@@ -95,7 +95,7 @@ func (ga *GnoAccount) gc() int {
 
 	now := time.Now()
 	initialCount := len(ga.Sessions)
-	validSessions := make([]GnoSession, 0, initialCount)
+	validSessions := make([]*GnoSession, 0, initialCount)
 
 	// Keep only non-expired sessions
 	for _, session := range ga.Sessions {
@@ -139,27 +139,25 @@ func (ga *GnoAccount) CreateSession(pubKey crypto.PubKey) (*GnoSession, error) {
 	newSession := NewGnoSession(accountAddr, pubKey)
 
 	// Add to sessions collection
-	ga.Sessions = append(ga.Sessions, *newSession)
+	ga.Sessions = append(ga.Sessions, newSession)
 	return newSession, nil
 }
 
 // GetSessions returns all non-expired sessions
 // Implements the Account interface
-func (ga *GnoAccount) GetSessions() []GnoSession {
+func (ga *GnoAccount) GetSessions() []*GnoSession {
 	// Clean up expired sessions first
 	ga.gc()
 
 	// Return copy of sessions
-	sessions := make([]GnoSession, len(ga.Sessions))
+	sessions := make([]*GnoSession, len(ga.Sessions))
 	copy(sessions, ga.Sessions)
 	return sessions
 }
 
 // GetSession gets a specific session by pubkey
 func (ga *GnoAccount) GetSession(pubKey crypto.PubKey) (*GnoSession, error) {
-	for i := range ga.Sessions {
-		session := &ga.Sessions[i]
-		
+	for _, session := range ga.Sessions {
 		if session.MatchesPubKey(pubKey) {
 			// Check if session is expired
 			if session.IsExpired() {
@@ -185,7 +183,30 @@ func (ga *GnoAccount) RevokeSession(pubKey crypto.PubKey) error {
 
 // RevokeOtherSessions implements Account interface with permission check
 func (ga *GnoAccount) RevokeOtherSessions(currentPubKey crypto.PubKey) error {
-	panic("not implemented")
+	// First check if the current pubkey has permission to manage sessions
+	if currentPubKey != nil && !currentPubKey.Equals(ga.GetPubKey()) {
+		// It's a session key, check permissions
+		session, err := ga.GetSession(currentPubKey)
+		if err != nil {
+			return err
+		}
+		if !session.CanManageSessions() {
+			return errors.New("session does not have permission to manage other sessions")
+		}
+	}
+
+	// Create a new slice without the current session
+	newSessions := make([]GnoSession, 0, len(ga.Sessions))
+	for _, session := range ga.Sessions {
+		if currentPubKey == nil || !session.PubKey.Equals(currentPubKey) {
+			// Skip all sessions except the current one
+			continue
+		}
+		newSessions = append(newSessions, session)
+	}
+	
+	ga.Sessions = newSessions
+	return nil
 }
 
 func (ga *GnoAccount) setFlag(flag BitSet) {

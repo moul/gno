@@ -1,0 +1,56 @@
+# Account Sessions with Secure Key Generation
+# This test demonstrates secure session key generation
+
+## start a new node
+gnoland start
+
+# Test the new secure session commands
+! gnokey session
+stderr 'manage account sessions'
+stderr 'session <subcommand>'
+
+# Test session create help - should show secure key generation
+! gnokey session create --help
+stderr 'create a new session for an account'
+stderr 'session key is generated securely'
+stderr '-name'
+stderr 'transfer-capacity'
+stderr 'validation-only'
+
+# Test session list help
+! gnokey session list --help
+stderr 'list sessions for an account'
+stderr 'identified by the naming pattern'
+
+# Test session revoke help
+! gnokey session revoke --help
+stderr 'revoke a session from an account'
+stderr 'session-key-name'
+
+# Example workflow (these would work with full implementation):
+
+# 1. Create a session with secure key generation
+# gnokey session create -account alice -name "daily spending" -transfer-capacity 100ugnot -expiration 24h
+# Output would show:
+#   Session Name: daily spending
+#   Session Key ID: alice_session_1625097600
+#   Session Address: g1abc...
+#   Session Public Key: pub1...
+#   IMPORTANT: The session key has been generated and stored securely
+
+# 2. List sessions to see generated keys
+# gnokey session list -account alice
+# Output would show:
+#   1. Key Name: alice_session_1625097600
+#      Address: g1abc...
+#      Public Key: pub1...
+
+# 3. Revoke using the generated key name
+# gnokey session revoke -account alice -session-key-name alice_session_1625097600
+
+# Benefits of secure generation:
+# - Uses cryptographically secure entropy
+# - User cannot accidentally provide weak keys
+# - Keys are stored safely in keybase
+# - Unique naming prevents collisions
+# - No private key material exposed to user

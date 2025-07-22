@@ -144,14 +144,15 @@ func (tx Tx) GetMemo() string { return tx.Memo }
 func (tx Tx) GetSignatures() []Signature { return tx.Signatures }
 
 func (tx Tx) GetSignBytes(chainID string, accountNumber uint64, sequence uint64) ([]byte, error) {
-	return GetSignaturePayload(SignDoc{
+	signDoc := SignDoc{
 		ChainID:       chainID,
 		AccountNumber: accountNumber,
 		Sequence:      sequence,
 		Fee:           tx.Fee,
 		Msgs:          tx.Msgs,
 		Memo:          tx.Memo,
-	})
+	}
+	return signDoc.GetSignaturePayload()
 }
 
 // __________________________________________________________
