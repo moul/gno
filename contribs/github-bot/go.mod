@@ -1,6 +1,6 @@
 module github.com/gnolang/gno/contribs/github-bot
 
-go 1.23.6
+go 1.23
 
 replace github.com/gnolang/gno => ../..
 

@@ -1,0 +1,22 @@
+# Go Version Configuration
+# This file centralizes Go version management for the Gno project
+# The project supports the current and previous Go versions (N and N-1)
+
+# Minimum supported Go version (N-1)
+GO_MIN_VERSION=1.23
+
+# Current Go version (N)
+GO_CURRENT_VERSION=1.24
+
+# Docker base image version (use specific version, not "latest")
+GO_DOCKER_VERSION=1.24-alpine
+
+# CI/CD version (should match GO_MIN_VERSION)
+GO_CI_VERSION=1.23.x
+
+# Notes:
+# - When updating versions, run misc/bump-go.sh to update all references
+# - All go.mod files should use GO_MIN_VERSION
+# - CI should use GO_MIN_VERSION for maximum compatibility
+# - Docker uses latest for development convenience
+# - Development can use GO_CURRENT_VERSION

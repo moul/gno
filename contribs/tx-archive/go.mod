@@ -1,6 +1,6 @@
 module github.com/gnolang/gno/contribs/tx-archive
 
-go 1.23.6
+go 1.23
 
 toolchain go1.24.3
 
