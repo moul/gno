@@ -5,10 +5,6 @@ golangci_lint := $(rundep) github.com/golangci/golangci-lint/v2/cmd/golangci-lin
 install:
 	go install .
 
-.PHONY: build
-build:
-	go build -o build/gnopie .
-
 .PHONY: lint
 lint:
 	$(golangci_lint) --config ../../.github/golangci.yml run ./...
