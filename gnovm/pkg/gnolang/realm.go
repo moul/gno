@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/gnolang/gno/tm2/pkg/txbench"
 	"reflect"
 	"sync"
 
@@ -497,6 +498,7 @@ func (rlm *Realm) MarkNewEscaped(oo Object) {
 
 // OpReturn calls this when exiting a realm transaction.
 func (rlm *Realm) FinalizeRealmTransaction(store Store) {
+	defer txbench.End(txbench.Begin("gnovm.realm_finalize"))
 	if bm.Enabled {
 		old := bm.StartStore(bm.RealmFinalizeTx)
 		defer func() { bm.StopStore(bm.RealmFinalizeTx, old, 0) }()

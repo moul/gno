@@ -15,6 +15,7 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/sdk"
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/gnolang/gno/tm2/pkg/store"
+	"github.com/gnolang/gno/tm2/pkg/txbench"
 )
 
 // simulation signature values used to estimate gas consumption
@@ -299,6 +300,7 @@ func NewAnteHandler(ak AccountKeeper, bank BankKeeperI, sigGasConsumer Signature
 			}
 			// Built only when verified: the build is unmetered and simulate skips
 			// verification. verifySig is true on every consensus path.
+			tbSig := txbench.Begin("ante.sig_verify")
 			var signBytes []byte
 			if verifySig {
 				var err error
@@ -336,6 +338,7 @@ func NewAnteHandler(ak AccountKeeper, bank BankKeeperI, sigGasConsumer Signature
 					return newCtx, abciResult(std.ErrUnauthorized("signature verification failed; verify correct account, sequence, and chain-id")), true
 				}
 			}
+			txbench.End(tbSig)
 			if isSession {
 				sigAcc.SetSequence(sigAcc.GetSequence() + 1)
 				ak.SetSessionAccount(newCtx, signerAddrs[i], sigAcc)
@@ -358,6 +361,7 @@ func NewAnteHandler(ak AccountKeeper, bank BankKeeperI, sigGasConsumer Signature
 // GetSignerAcc returns an account for a given address that is expected to sign
 // a transaction.
 func GetSignerAcc(ctx sdk.Context, ak AccountKeeper, addr crypto.Address) (std.Account, sdk.Result) {
+	defer txbench.End(txbench.Begin("ante.account_read"))
 	if acc := ak.GetAccount(ctx, addr); acc != nil {
 		return acc, sdk.Result{}
 	}
@@ -482,6 +486,7 @@ func consumeMultisignatureVerificationGas(meter store.GasMeter,
 // NOTE: We could use the CoinKeeper (in addition to the AccountKeeper, because
 // the CoinKeeper doesn't give us accounts), but it seems easier to do this.
 func DeductFees(bk BankKeeperI, ctx sdk.Context, acc std.Account, collector crypto.Address, fees std.Coins) sdk.Result {
+	defer txbench.End(txbench.Begin("ante.deduct_fees"))
 	if !fees.IsValid() {
 		return abciResult(std.ErrInsufficientFee(fmt.Sprintf("invalid fee amount: %s", fees)))
 	}

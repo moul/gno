@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/gnolang/gno/tm2/pkg/txbench"
 	"io"
 	"iter"
 	"reflect"
@@ -555,6 +556,7 @@ func (ds *defaultStore) GetObjectSafe(oid ObjectID) Object {
 // loads and caches an object.
 // CONTRACT: object isn't already in the cache.
 func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
+	defer txbench.End(txbench.Begin("gnovm.object_load"))
 	var size int
 	if bm.Enabled {
 		old := bm.StartStore(bm.StoreGetObject)

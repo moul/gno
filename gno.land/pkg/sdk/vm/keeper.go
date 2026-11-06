@@ -37,6 +37,7 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/sdk"
 	"github.com/gnolang/gno/tm2/pkg/sdk/auth"
 	"github.com/gnolang/gno/tm2/pkg/std"
+	"github.com/gnolang/gno/tm2/pkg/txbench"
 	"github.com/gnolang/gno/tm2/pkg/store"
 	"github.com/gnolang/gno/tm2/pkg/store/dbadapter"
 	stypes "github.com/gnolang/gno/tm2/pkg/store/types"
@@ -1240,6 +1241,7 @@ func isApprover(approvers []crypto.Address, addr crypto.Address) bool {
 
 // Call calls a public Gno function (for delivertx).
 func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
+	defer txbench.End(txbench.Begin("vm.call"))
 	// Session spend on msg.Send is enforced inside bank.Keeper.SendCoins
 	// (tm2/pkg/sdk/bank/keeper.go), which is where the actual coin
 	// transfer happens. No pre-check needed here.
@@ -1248,10 +1250,12 @@ func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
 	fnc := msg.Func
 	gnostore := vm.getGnoTransactionStore(ctx)
 	// Get the package and function type.
+	tbLoad := txbench.Begin("vm.pkg_load")
 	pv := gnostore.GetPackage(pkgPath, false)
 	pl := gno.PackageNodeLocation(pkgPath)
 	pn := gnostore.GetBlockNode(pl).(*gno.PackageNode)
 	ft := pn.GetStaticTypeOf(gnostore, gno.Name(fnc)).(*gno.FuncType)
+	txbench.End(tbLoad)
 	if len(ft.Params) == 0 || ft.Params[0].Type.String() != ".uverse.realm" {
 		panic(fmt.Sprintf("function %s is non-crossing and cannot be called with MsgCall; query with vm/qeval or use MsgRun", fnc))
 	}
@@ -1369,7 +1373,9 @@ func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
 	defer m.Release()
 	m.SetActivePackage(mpv)
 	defer doRecover(m, &err)
+	tbEval := txbench.Begin("vm.exec")
 	rtvs := m.Eval(xn)
+	txbench.End(tbEval)
 	for i, rtv := range rtvs {
 		res = res + rtv.String()
 		if i < len(rtvs)-1 {
@@ -1397,7 +1403,9 @@ func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
 
 	// Use parameters before executing the message, as they may change during execution.
 	// Parameter changes take effect only after the message has executed successfully.
+	tbDep := txbench.Begin("vm.storage_deposit")
 	err = vm.processStorageDeposit(ctx, caller, msg.MaxDeposit, gnostore, params)
+	txbench.End(tbDep)
 	if err != nil {
 		return "", err
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/gnolang/gno/tm2/pkg/store"
 	"github.com/gnolang/gno/tm2/pkg/store/trace"
+	"github.com/gnolang/gno/tm2/pkg/txbench"
 )
 
 // Key to store the consensus params in the main store.
@@ -667,6 +668,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) (res abci.ResponseCheckTx) 
 
 // DeliverTx implements the ABCI interface.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) (res abci.ResponseDeliverTx) {
+	defer txbench.End(txbench.Begin("deliver_tx"))
 	app.clearRefusedIterators()
 	ctx := app.getContextForTx(RunTxModeDeliver, req.Tx)
 	result := app.runTx(ctx, req.Tx)
@@ -917,10 +919,12 @@ func (app *BaseApp) runTx(ctx Context, txBytes []byte) (result Result) {
 	}()
 
 	var tx Tx
+	tbDec := txbench.Begin("tx.amino_decode")
 	if err := amino.Unmarshal(txBytes, &tx); err != nil {
 		result.Error = ABCIError(std.ErrTxDecode(err.Error()))
 		return
 	}
+	txbench.End(tbDec)
 
 	msgs := tx.GetMsgs()
 	if err := validateBasicTxMsgs(msgs); err != nil {
@@ -936,7 +940,9 @@ func (app *BaseApp) runTx(ctx Context, txBytes []byte) (result Result) {
 	if app.anteHandler != nil {
 		var anteCtx Context
 		anteCtx, msCache = app.cacheTxContext(ctx)
+		tbAnte := txbench.Begin("tx.ante")
 		newCtx, result, abort := app.anteHandler(anteCtx, tx, mode == RunTxModeSimulate)
+		txbench.End(tbAnte)
 		if newCtx.IsZero() {
 			panic("newCtx must not be zero")
 		}
@@ -983,7 +989,9 @@ func (app *BaseApp) runTx(ctx Context, txBytes []byte) (result Result) {
 		runMsgCtx = app.beginTxHook(runMsgCtx)
 	}
 
+	tbMsgs := txbench.Begin("tx.run_msgs")
 	result = app.runMsgs(runMsgCtx, msgs, mode)
+	txbench.End(tbMsgs)
 	result.GasWanted = gasWanted
 
 	// Simulate: return after msg execution. The outer CacheContext
@@ -993,11 +1001,15 @@ func (app *BaseApp) runTx(ctx Context, txBytes []byte) (result Result) {
 	}
 
 	if app.endTxHook != nil {
+		tbHook := txbench.Begin("tx.gnostore_write")
 		app.endTxHook(runMsgCtx, result)
+		txbench.End(tbHook)
 	}
 
 	if result.IsOK() {
+		tbFlush := txbench.Begin("tx.cache_flush")
 		msCache.MultiWrite()
+		txbench.End(tbFlush)
 	} else {
 		cp.WriteCheckpoint()
 	}
@@ -1027,6 +1039,7 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 // against that height and gracefully halt if it matches the latest committed
 // height.
 func (app *BaseApp) Commit() (res abci.ResponseCommit) {
+	defer txbench.End(txbench.Begin("commit"))
 	header := app.deliverState.ctx.BlockHeader()
 
 	// Write block header into the deliver cache before flush,
@@ -1046,8 +1059,12 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// Order matters: MultiWrite MUST precede Commit — reversing it makes IAVL
 	// SaveVersion run against a stale tree (wrong app hash) and shifts dbadapter
 	// writes into the next block's batch.
+	tbBF := txbench.Begin("commit.block_cache_flush")
 	app.deliverState.ms.MultiWrite()
+	txbench.End(tbBF)
+	tbMS := txbench.Begin("commit.multistore")
 	commitID := app.cms.Commit()
+	txbench.End(tbMS)
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.

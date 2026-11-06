@@ -16,6 +16,7 @@ import (
 	serrors "github.com/gnolang/gno/tm2/pkg/store/errors"
 	"github.com/gnolang/gno/tm2/pkg/store/immut"
 	"github.com/gnolang/gno/tm2/pkg/store/types"
+	"github.com/gnolang/gno/tm2/pkg/txbench"
 )
 
 const (
@@ -344,7 +345,9 @@ func (ms *multiStore) Commit() types.CommitID {
 	} else {
 		version = last.Version + 1
 	}
+	tbCS := txbench.Begin("commit.tree_save_version")
 	commitInfo := commitStores(version, ms.stores)
+	txbench.End(tbCS)
 
 	// Feed metadata into the same collector as IAVL/dbadapter writes so a
 	// single drain covers all four write sites. The Write() must precede
@@ -371,9 +374,11 @@ func (ms *multiStore) Commit() types.CommitID {
 	}
 
 	// Drain the collector into a real batch and flush atomically.
+	tbWC := txbench.Begin("commit.backend_write")
 	if err := ms.writeCollected(); err != nil {
 		panic("rootmulti: Commit() failed: " + err.Error())
 	}
+	txbench.End(tbWC)
 
 	// Prepare for next version.
 	ms.setLastCommitID(commitID)
