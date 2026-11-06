@@ -823,7 +823,7 @@ func (cdc *Codec) unmarshalAnyBinary2Depth(bz []byte, ptr any, anyDepth int) err
 
 	// Check assignability. rv was set at function entry (above).
 	rvElem := rv.Elem()
-	if !irvSet.Type().AssignableTo(rvElem.Type()) {
+	if !txbAssignable(irvSet.Type(), rvElem.Type()) {
 		return fmt.Errorf("UnmarshalAnyBinary2: decoded type %v is not assignable to %v", irvSet.Type(), rvElem.Type())
 	}
 
@@ -842,10 +842,12 @@ func (cdc *Codec) unmarshalAnyBinary2Depth(bz []byte, ptr any, anyDepth int) err
 	// registry where a concrete's interface implementation could change
 	// between checks. Without it, the genproto2 path would silently
 	// rv.Set() a now-unassignable value while reflect would error.
-	if !irvSet.Type().AssignableTo(rvElem.Type()) {
+	if !txbAssignable(irvSet.Type(), rvElem.Type()) {
 		return fmt.Errorf("UnmarshalAnyBinary2: decoded type %v is not assignable to %v (post-decode check)", irvSet.Type(), rvElem.Type())
 	}
-	rvElem.Set(irvSet)
+	if !FastAssign || AnySetter == nil || !AnySetter(ptr, irvSet.Interface()) {
+		rvElem.Set(irvSet)
+	}
 	return nil
 }
 
@@ -1568,4 +1570,34 @@ type PBMarshaler2 interface {
 type PBMessager2 interface {
 	PBMarshaler2
 	UnmarshalBinary2(cdc *Codec, bz []byte, anyDepth int) error
+}
+
+// UnmarshalAnyGenproto2 decodes an Any envelope into an interface pointer via
+// the generated genproto2 path of the concrete type (txbench experiment).
+func UnmarshalAnyGenproto2(bz []byte, ptr any) error {
+	return gcdc.UnmarshalAnyBinary2(bz, ptr, 0)
+}
+
+// FastAssign (txbench experiment) memoizes AssignableTo per type pair on the
+// genproto2 Any path and lets AnySetter store the decoded value without
+// reflect.Value.Set, whose interface check walks both method sets every time.
+var FastAssign bool
+
+// AnySetter stores v into *ptr with a plain type assertion; it returns false
+// when it does not know ptr's type.
+var AnySetter func(ptr, v any) bool
+
+var assignCache sync.Map // [2]reflect.Type -> bool
+
+func txbAssignable(v, t reflect.Type) bool {
+	if !FastAssign {
+		return v.AssignableTo(t)
+	}
+	k := [2]reflect.Type{v, t}
+	if ok, hit := assignCache.Load(k); hit {
+		return ok.(bool)
+	}
+	ok := v.AssignableTo(t)
+	assignCache.Store(k, ok)
+	return ok
 }

@@ -3,10 +3,12 @@ package gnolang
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"bytes"
 	"fmt"
 	"github.com/gnolang/gno/tm2/pkg/txbench"
 	"io"
 	"iter"
+	"maps"
 	"reflect"
 	"slices"
 	"strconv"
@@ -544,6 +546,12 @@ func (ds *defaultStore) GetObjectSafe(oid ObjectID) Object {
 	if oo, exists := ds.cacheObjects[oid]; exists {
 		return oo
 	}
+	if TxbenchObjShare > 0 {
+		if oo, exists := txbenchShared[oid]; exists {
+			ds.cacheObjects[oid] = oo
+			return oo
+		}
+	}
 	// check baseStore.
 	if ds.baseStore != nil {
 		if oo := ds.loadObjectSafe(oid); oo != nil {
@@ -568,7 +576,9 @@ func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
 		hashbz = ds.stdlibKeyBytes[key] // from byte cache — no I/O gas
 	}
 	if hashbz == nil {
+		tbF := txbench.Begin("objload.fetch")
 		hashbz = ds.baseStore.Get(ds.gctx, []byte(key)) // from store — charges I/O gas
+		txbench.End(tbF)
 	}
 	if hashbz != nil {
 		size = len(hashbz)
@@ -576,15 +586,41 @@ func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
 		bz := hashbz[HashSize:]
 		fromCache := oid.PkgID.IsStdlibPkg() && ds.stdlibKeyBytes[key] != nil
 		var oo Object
+		tbG := txbench.Begin("objload.gas_acct")
 		gas := overflow.Mulp(ds.gasConfig.GasAminoDecode, store.Gas(len(bz)))
 		ds.consumeGas(gas, GasAminoDecodeDesc)
+		txbench.End(tbG)
 		if trace.StoreGasEnabled {
 			trace.Store("DECODE_OBJ", gas, []byte(key), len(hashbz),
 				fmt.Sprintf("cached=%v,meter=%v", fromCache, ds.gasMeter != nil))
 		}
-		amino.MustUnmarshal(bz, &oo)
+		tbD := txbench.Begin("objload.decode")
+		if TxbenchDecodeHook != nil {
+			TxbenchDecodeHook(bz)
+		}
+		if TxbenchDecodeCache {
+			oo = txbenchDecCacheGet(hash, bz)
+		}
+		if oo == nil {
+			if TxbenchFastDecode {
+				if err := amino.UnmarshalAnyGenproto2(bz, &oo); err != nil {
+					panic(err)
+				}
+			} else {
+				amino.MustUnmarshal(bz, &oo)
+			}
+			if TxbenchDecodeCache {
+				normalizeDecodedCap(oo)
+				txbenchDecCachePut(hash, bz, oo)
+			}
+		}
 		// Must precede GetShallowSize below: it charges by capacity.
 		normalizeDecodedCap(oo)
+		txbench.End(tbD)
+		if txbench.On {
+			txbench.NoteObject(key, size, reflect.TypeOf(oo).String())
+		}
+		tbA := txbench.Begin("objload.gas_acct")
 		if debug {
 			debug.Printf("loadObjectSafe by oid: %v, type of oo: %v\n", oid, reflect.TypeOf(oo))
 		}
@@ -605,6 +641,7 @@ func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
 			}
 		}
 		oo.SetHash(ValueHash{NewHashlet(hash)})
+		txbench.End(tbA)
 		if debugAssert {
 			// Verify stored hash matches actual content hash.
 			if computed := HashBytes(bz); computed != NewHashlet(hash) {
@@ -615,15 +652,19 @@ func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
 		}
 
 		if pv, ok := oo.(*PackageValue); ok {
+			tbP := txbench.Begin("objload.fill_package")
 			ds.SetStagingPackage(pv)
 			ds.fillPackage(pv)
+			txbench.End(tbP)
 		}
 
 		ds.cacheObjects[oid] = oo
 		oo.GetObjectInfo().LastObjectSize = int64(size)
 		// Restore-path gas (e.g. ComputeMapKey rebuilding a map's vmap):
 		// metered against this store's tx meter. See ComputeMapKey's doc.
+		tbT := txbench.Begin("objload.fill_types")
 		_ = fillTypesOfValue(ds.gasMeter, ds, oo)
+		txbench.End(tbT)
 		return oo
 	}
 	return nil
@@ -843,6 +884,7 @@ func (ds *defaultStore) GetTypeSafe(tid TypeID) Type {
 			bz = ds.baseStore.Get(ds.gctx, []byte(key)) // from store — charges I/O gas
 		}
 		if bz != nil {
+			defer txbench.End(txbench.Begin("gnovm.type_load"))
 			gas := overflow.Mulp(ds.gasConfig.GasAminoDecode, store.Gas(len(bz)))
 			ds.consumeGas(gas, GasAminoDecodeDesc)
 			if trace.StoreGasEnabled {
@@ -1501,11 +1543,13 @@ func (ds *defaultStore) RealmStorageDiffs() StorageDiffs {
 // It also sets a new allocator.
 func (ds *defaultStore) ClearObjectCache() {
 	ds.alloc.Reset()
+	ds.txbenchFold()
 	ds.cacheObjects = make(map[ObjectID]Object) // new cache.
 	// Lock-step reset cacheRealms.
 	ds.cacheRealms = make(map[PkgID]*Realm)
 	ds.realmStorageDiffs = make(StorageDiffs)
 	ds.opslog = nil // new ops log.
+	ds.txbenchSeed()
 	ds.SetCachePackage(Uverse())
 }
 
@@ -1660,4 +1704,124 @@ func InitStoreCaches(store Store) {
 		}
 	}
 	store.SetCachePackage(Uverse())
+}
+
+// ---- txbench object cache experiment (measurement only, not correct code) ----
+
+// TxbenchObjShare: 0 off; >0 every tx store starts from a clone of a shared
+// object cache, and ClearObjectCache folds the tx cache back into it.
+// The harness clears it at every BeginBlock for "block" scope.
+var TxbenchObjShare int
+
+// TxbenchDecodeHook, when set, sees the amino bytes of every decoded object.
+var TxbenchDecodeHook func(bz []byte)
+
+var (
+	txbenchShared       = map[ObjectID]Object{}
+	txbenchSharedRealms = map[PkgID]*Realm{}
+)
+
+func TxbenchResetShared() {
+	clear(txbenchShared)
+	clear(txbenchSharedRealms)
+}
+
+func TxbenchSharedLen() int { return len(txbenchShared) }
+
+func (ds *defaultStore) txbenchSeed() {
+	if TxbenchObjShare == 0 {
+		return
+	}
+	ds.cacheRealms = maps.Clone(txbenchSharedRealms)
+}
+
+func (ds *defaultStore) txbenchFold() {
+	if TxbenchObjShare == 0 {
+		return
+	}
+	for id, o := range ds.cacheObjects {
+		if pv, ok := o.(*PackageValue); ok && pv.PkgPath == ".uverse" {
+			continue
+		}
+		txbenchShared[id] = o
+	}
+	maps.Copy(txbenchSharedRealms, ds.cacheRealms)
+}
+
+// TxbenchFastDecode routes object decode through genproto2 instead of reflection.
+var TxbenchFastDecode bool
+
+func init() {
+	amino.AnySetter = func(ptr, v any) bool {
+		switch p := ptr.(type) {
+		case *Value:
+			x, ok := v.(Value)
+			*p = x
+			return ok
+		case *Type:
+			x, ok := v.(Type)
+			*p = x
+			return ok
+		case *Object:
+			x, ok := v.(Object)
+			*p = x
+			return ok
+		case *Expr:
+			x, ok := v.(Expr)
+			*p = x
+			return ok
+		case *BlockNode:
+			x, ok := v.(BlockNode)
+			*p = x
+			return ok
+		case *Stmt:
+			x, ok := v.(Stmt)
+			*p = x
+			return ok
+		case *Node:
+			x, ok := v.(Node)
+			*p = x
+			return ok
+		}
+		return false
+	}
+}
+
+// ---- txbench decoded-object cache (design A prototype) ----
+// Content-addressed: key is the stored object hash, entry holds the exact
+// stored bytes and a pristine decoded copy. The gas path is untouched: the
+// backend Get and the decode gas are charged before this cache is consulted.
+
+var TxbenchDecodeCache bool
+
+type txbenchDecEntry struct {
+	bz []byte
+	oo Object
+}
+
+var (
+	txbenchDecMu   sync.Mutex
+	txbenchDecMap  = map[string]txbenchDecEntry{}
+	TxbenchDecHits int
+	TxbenchDecMiss int
+)
+
+func txbenchDecCacheGet(hash, bz []byte) Object {
+	txbenchDecMu.Lock()
+	e, ok := txbenchDecMap[string(hash)]
+	txbenchDecMu.Unlock()
+	if !ok || !bytes.Equal(e.bz, bz) {
+		TxbenchDecMiss++
+		return nil
+	}
+	TxbenchDecHits++
+	return copyValueWithRefs(e.oo).(Object)
+}
+
+func txbenchDecCachePut(hash, bz []byte, oo Object) {
+	cp := copyValueWithRefs(oo).(Object)
+	bzc := append([]byte(nil), bz...)
+	txbenchDecMu.Lock()
+	txbenchDecMap[string(hash)] = txbenchDecEntry{bz: bzc, oo: cp}
+	txbenchDecMu.Unlock()
 }

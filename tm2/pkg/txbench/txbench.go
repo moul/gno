@@ -132,3 +132,53 @@ func open(name string) bool {
 	}
 	return false
 }
+
+// ObjNote is the per-transaction object load census.
+type ObjNote struct {
+	Loads, Bytes   int64
+	Distinct       int64 // distinct object IDs loaded in this tx
+	SeenBefore     int64 // loads whose ID was loaded by an earlier tx since ResetSeen
+	SeenBeforeByte int64
+	ByKind         map[string]int64
+	BytesByKind    map[string]int64
+}
+
+var (
+	objCur  = ObjNote{ByKind: map[string]int64{}, BytesByKind: map[string]int64{}}
+	objTx   = map[string]bool{}
+	objSeen = map[string]bool{}
+)
+
+// NoteObject records one object load (backend fetch plus decode).
+func NoteObject(id string, size int, kind string) {
+	if !On {
+		return
+	}
+	objCur.Loads++
+	objCur.Bytes += int64(size)
+	objCur.ByKind[kind]++
+	objCur.BytesByKind[kind] += int64(size)
+	if !objTx[id] {
+		objTx[id] = true
+		objCur.Distinct++
+	}
+	if objSeen[id] {
+		objCur.SeenBefore++
+		objCur.SeenBeforeByte += int64(size)
+	}
+}
+
+// TakeObjects returns the census since the last call and folds this tx's IDs
+// into the cross-tx seen set.
+func TakeObjects() ObjNote {
+	out := objCur
+	for id := range objTx {
+		objSeen[id] = true
+	}
+	clear(objTx)
+	objCur = ObjNote{ByKind: map[string]int64{}, BytesByKind: map[string]int64{}}
+	return out
+}
+
+// ResetSeen forgets every ID seen so far.
+func ResetSeen() { clear(objSeen); clear(objTx) }
