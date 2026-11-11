@@ -85,6 +85,9 @@ func (c AppOptions) validate() error {
 // and the test that checks the counter from drifting apart.
 const genesisSignerFunding int64 = 10_000_000_000
 
+// baseStoreReadCacheBytes bounds the read cache in front of the base store.
+const baseStoreReadCacheBytes = 64 << 20
+
 func NewAppWithOptions(cfg *AppOptions) (abci.Application, error) {
 	if err := cfg.validate(); err != nil {
 		return nil, err
@@ -117,7 +120,12 @@ func NewAppWithOptions(cfg *AppOptions) (abci.Application, error) {
 	// Not state-compatible with IAVL databases: fresh chains and
 	// export/import forks only.
 	baseApp.MountStoreWithDB(mainKey, storebptree.FastStoreConstructor, cfg.DB)
-	baseApp.MountStoreWithDB(baseKey, dbadapter.StoreConstructor, cfg.DB)
+	// The plain store holds the VM's objects, types and packages. Reading
+	// them through a committed-value cache skips the backend for the objects
+	// every transaction reloads (package blocks, the upper levels of a
+	// realm's trees). Gas is unchanged: it is charged above, by the tx cache
+	// store, from the same bytes.
+	baseApp.MountStoreWithDB(baseKey, dbadapter.ReadCachedStoreConstructor(baseStoreReadCacheBytes), cfg.DB)
 
 	// Construct keepers.
 

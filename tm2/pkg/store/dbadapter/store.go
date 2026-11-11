@@ -14,6 +14,20 @@ func StoreConstructor(db dbm.DB, opts types.StoreOptions) types.CommitStore {
 	}
 }
 
+// ReadCachedStoreConstructor returns a CommitStoreConstructor like
+// StoreConstructor whose live store reads through a write-through cache of
+// at most maxBytes (see dbm.ReadCacheDB). Immutable query views read the
+// database directly. Gas is unchanged: it is charged by the cache.Store
+// above, from the bytes returned, which the read cache returns identically.
+func ReadCachedStoreConstructor(maxBytes int) types.CommitStoreConstructor {
+	return func(db dbm.DB, opts types.StoreOptions) types.CommitStore {
+		if !opts.Immutable {
+			db = dbm.NewReadCacheDB(db, maxBytes)
+		}
+		return StoreConstructor(db, opts)
+	}
+}
+
 // Wrapper type for dbm.Db with implementation of Store
 type Store struct {
 	DB dbm.DB
